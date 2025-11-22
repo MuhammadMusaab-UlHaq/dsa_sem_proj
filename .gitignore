@@ -1,3 +1,6 @@
 desktop.ini
 .venv/
 venv/
+cache/
+data/
+__pycache__/
