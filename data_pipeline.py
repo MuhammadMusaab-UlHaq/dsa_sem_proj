@@ -1,162 +1,183 @@
 import requests
 import osmnx as ox
 import json
-import time
 import os
+import xml.etree.ElementTree as ET
+from shapely.geometry import mapping
+import time
 
 # --- Configuration ---
-# NUST H-12 Center Coordinates
 CENTER_LAT = 33.6425
 CENTER_LON = 72.9930
-RADIUS = 1500  # Meters
+RADIUS = 2000 
 
 # Files
-RAW_MAP_FILE = "nust_raw.osm" # The raw XML from OpenStreetMap
+RAW_MAP_FILE = "nust_raw.osm"
 NODES_FILE = "nodes.json"
 EDGES_FILE = "edges.json"
+POIS_FILE = "pois.json"
 ELEVATION_API = "https://api.open-elevation.com/api/v1/lookup"
 
 def download_raw_map_data():
-    """
-    Step 1: Download raw XML directly from Overpass API.
-    Reference: https://wiki.openstreetmap.org/wiki/Overpass_API
-    """
-    print(f"[1/4] Downloading Raw OSM Data (Direct API Strategy)...")
+    print(f"[1/5] Downloading Real-World Map Data...")
     
-    # Overpass Query Language (QL)
-    # This asks for all "ways" (roads) with a "highway" tag within RADIUS of CENTER
-    overpass_url = "http://overpass-api.de/api/interpreter"
+    servers = [
+        "https://overpass-api.de/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter",
+    ]
+
+    # Query: Get everything with a name OR a barrier (Gates)
     overpass_query = f"""
-    [out:xml];
+    [out:xml][timeout:90];
     (
       way["highway"](around:{RADIUS},{CENTER_LAT},{CENTER_LON});
+      node["name"](around:{RADIUS},{CENTER_LAT},{CENTER_LON});
+      node["barrier"](around:{RADIUS},{CENTER_LAT},{CENTER_LON}); 
+      way["name"](around:{RADIUS},{CENTER_LAT},{CENTER_LON});
     );
     (._;>;);
     out meta;
     """
     
-    try:
-        # We use a stream download to handle large files without memory crashes
-        response = requests.get(overpass_url, params={'data': overpass_query}, stream=True, timeout=60)
-        
-        if response.status_code == 200:
-            with open(RAW_MAP_FILE, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=1024):
-                    if chunk:
-                        f.write(chunk)
-            print(f"      Success! Saved raw map to '{RAW_MAP_FILE}'")
-            return True
-        else:
-            print(f"      Error: Server returned {response.status_code}")
-            return False
-    except Exception as e:
-        print(f"      Critical Network Error: {e}")
-        return False
+    for url in servers:
+        try:
+            print(f"      Trying server: {url} ...")
+            response = requests.get(url, params={'data': overpass_query}, stream=True, timeout=90)
+            if response.status_code == 200:
+                with open(RAW_MAP_FILE, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=1024):
+                        if chunk: f.write(chunk)
+                print(f"      Success! Saved raw map to '{RAW_MAP_FILE}'")
+                return True
+        except Exception as e:
+            print(f"      Connection failed: {e}")
+    return False
 
 def process_graph_locally():
-    """
-    Step 2: Use osmnx to parse the LOCALLY saved file.
-    """
-    print(f"[2/4] Processing local XML file into Graph...")
-    
+    print(f"[2/5] Building Road Network (Graph)...")
     if not os.path.exists(RAW_MAP_FILE):
-        raise FileNotFoundError("Raw map file not found. Download failed.")
-
-    # Load graph from the XML file
+        raise FileNotFoundError("Raw map file not found.")
+    
+    # 1. Load Graph
     G = ox.graph_from_xml(RAW_MAP_FILE)
     
-    # ERROR FIX: Wrap simplification in try-except
-    # If the graph is already simple, osmnx throws an error. We catch it and move on.
-    try:
-        G = ox.simplify_graph(G)
-        print("      Simplification successful.")
-    except Exception:
-        print("      Graph was already simplified. Skipping optimization step.")
+    # 2. CRITICAL: DO NOT SIMPLIFY "BARRIER" NODES
+    # Simplifying removes the "Gate" node because it's just a dot on a line.
+    # We skip simplification to keep the exact gate locations.
+    print("      Skipping simplification to preserve Gate nodes...")
     
-    print(f"      Graph built! Nodes: {len(G.nodes)}, Edges: {len(G.edges)}")
     return G
-def fetch_elevation_safe(node_list):
-    """
-    Safe batch fetcher for elevation
-    """
+
+def extract_pois_from_xml():
+    print(f"[3/5] Extracting POIs from OSM Tags...")
+    pois = []
     try:
-        resp = requests.post(ELEVATION_API, json={"locations": node_list}, timeout=15)
-        if resp.status_code == 200:
-            return resp.json()['results']
-    except:
-        pass
-    return None
+        tree = ET.parse(RAW_MAP_FILE)
+        root = tree.getroot()
+        
+        for node in root.findall('node'):
+            tags = {tag.get('k'): tag.get('v') for tag in node.findall('tag')}
+            
+            name = tags.get('name')
+            barrier = tags.get('barrier')
+            amenity = tags.get('amenity')
+            
+            # Intelligent Naming
+            final_name = name
+            poi_type = "Location"
+
+            if barrier in ['gate', 'entrance', 'toll_booth']:
+                poi_type = "Entrance"
+                if not final_name: final_name = f"Gate ({node.get('id')})"
+            
+            if amenity: poi_type = amenity
+
+            if final_name:
+                pois.append({
+                    "name": final_name,
+                    "lat": float(node.get('lat')),
+                    "lon": float(node.get('lon')),
+                    "type": poi_type
+                })
+    except Exception as e:
+        print(f"      Warning: XML parsing issue ({e}).")
+
+    print(f"      Found {len(pois)} POIs.")
+    return pois
 
 def build_database(G):
-    print("[3/4] Enriching Elevation & Cleaning Edges...")
-    
+    print("[4/5] Processing Topology & Elevation...")
     nodes_export = {}
     edges_export = []
     
-    # 1. Prepare Nodes
-    all_nodes = []
     node_ids = []
+    api_payload = []
     
+    # Nodes
     for n_id, data in G.nodes(data=True):
         nodes_export[n_id] = {
             "id": n_id,
             "lat": data['y'],
             "lon": data['x'],
-            "elevation": 508 # Default NUST height
+            "elevation": 508
         }
-        all_nodes.append({"latitude": data['y'], "longitude": data['x']})
         node_ids.append(n_id)
+        api_payload.append({"latitude": data['y'], "longitude": data['x']})
 
-    # 2. Fetch Elevation (Batch of 100)
-    # Only doing first 200 nodes to save time/bandwidth for this demo.
-    # In production, you would loop all.
-    print("      (Fetching elevation for a subset of nodes to speed up)...")
-    subset = all_nodes[:200] 
-    results = fetch_elevation_safe(subset)
-    
-    if results:
-        for i, res in enumerate(results):
-            real_id = node_ids[i]
-            nodes_export[real_id]['elevation'] = res['elevation']
-        print(f"      Updated elevation for {len(results)} nodes.")
+    # Elevation (Sample limited for speed)
+    subset = api_payload[:300] 
+    try:
+        resp = requests.post(ELEVATION_API, json={"locations": subset}, timeout=5)
+        if resp.status_code == 200:
+            for i, res in enumerate(resp.json()['results']):
+                nodes_export[node_ids[i]]['elevation'] = res['elevation']
+    except: pass
 
-    # 3. Process Edges
+    # Edges
     for u, v, data in G.edges(data=True):
         hw = data.get('highway', '')
         
-        # Multi-modal logic
+        # --- SMART CLASSIFICATION ---
         is_walk = True
         is_car = True
         
-        if hw in ['footway', 'path', 'steps']: is_car = False
-        if hw in ['motorway']: is_walk = False
+        # Motorways are for cars only
+        if hw in ['motorway', 'motorway_link', 'trunk', 'trunk_link']:
+            is_walk = False
         
-        # Handle OSM list weirdness
-        length = data.get('length', 0)
-        if isinstance(length, list): length = float(length[0])
+        # Paths are for walking only
+        if hw in ['footway', 'path', 'steps', 'pedestrian']:
+            is_car = False
+            
+        # Service roads (Campus) are BOTH
+        if hw in ['service', 'residential', 'unclassified']:
+            is_car = True
+            is_walk = True
+
+        length = float(data.get('length', 0)) if not isinstance(data.get('length'), list) else float(data.get('length')[0])
         
+        # Save the highway type so we can use it in structures.py
         edges_export.append({
-            "u": u,
-            "v": v,
-            "weight": float(length),
-            "is_walkable": is_walk,
-            "is_drivable": is_car,
-            "name": data.get('name', "Unknown")
+            "u": u, "v": v, "weight": length,
+            "is_walkable": is_walk, "is_drivable": is_car,
+            "highway": hw, # <--- NEW FIELD
+            "geometry": [] # Simplified for this snippet
         })
 
     return nodes_export, edges_export
 
-def save_data(nodes, edges):
-    print(f"[4/4] Saving JSON database...")
+def save_data(nodes, edges, pois):
+    print(f"[5/5] Saving Database...")
     with open(NODES_FILE, 'w') as f: json.dump(nodes, f, indent=2)
     with open(EDGES_FILE, 'w') as f: json.dump(edges, f, indent=2)
+    with open(POIS_FILE, 'w') as f: json.dump(pois, f, indent=2)
     print("Done.")
 
 if __name__ == "__main__":
-    # Pipeline Execution
     if download_raw_map_data():
         G = process_graph_locally()
+        pois = extract_pois_from_xml()
         nodes, edges = build_database(G)
-        save_data(nodes, edges)
+        save_data(nodes, edges, pois)
     else:
-        print("Pipeline aborted.")
+        print("Pipeline Aborted.")
