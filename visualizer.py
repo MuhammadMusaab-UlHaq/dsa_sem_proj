@@ -1,192 +1,122 @@
-import json
-import os
 import webbrowser
+import os
 
-def visualize_path(graph, path: list, pois: list = [], output_file: str = "map.html"):
+# Your Google Maps API Key (Used for Frontend Visualization)
+GOOGLE_API_KEY = "AIzaSyDjkvqozp-7DoEnMVS7kv1Rl4I80gDxjtc"
+
+def generate_map(path_nodes, all_nodes, output_file="map.html"):
     """
-    Generates a modern MapLibre GL JS map using OpenFreeMap tiles.
-    Overlays the Python-calculated A* path and POIs.
+    Generates a Google Maps visualization of the route.
+    path_nodes: List of node IDs (strings or ints) from the algorithm.
+    all_nodes: Dictionary of node data {id: {lat: x, lon: y...}}
     """
-    if not path:
-        print("No path to visualize.")
+    
+    if not path_nodes or len(path_nodes) < 2:
+        print("⚠️ Visualizer: Not enough nodes to plot a path.")
         return
 
-    # 1. Convert Path to GeoJSON LineString
-    # MapLibre/GeoJSON expects [lon, lat], NOT [lat, lon]
+    # 1. Extract Coordinates for the Route Polyline
     route_coords = []
     
-    for i in range(len(path) - 1):
-        u_id = path[i]
-        v_id = path[i+1]
-        
-        # Get geometry from the edge data
-        # neighbors list structure: (neighbor_id, weight, is_walk, is_drive, geometry)
-        neighbors = graph.get_neighbors(u_id)
-        edge_geometry = []
-        
-        found_edge = False
-        for n in neighbors:
-            if n[0] == v_id:
-                edge_geometry = n[4] # This is stored as [[lat, lon], ...] in structures.py
-                found_edge = True
-                break
-        
-        if found_edge and edge_geometry:
-            # Swap to [lon, lat] for GeoJSON
-            segment = [[pt[1], pt[0]] for pt in edge_geometry]
-            route_coords.extend(segment)
-        else:
-            # Fallback to straight line if geometry is missing
-            n1 = graph.get_node(u_id)
-            n2 = graph.get_node(v_id)
-            if n1 and n2:
-                route_coords.append([n1['lon'], n1['lat']])
-                route_coords.append([n2['lon'], n2['lat']])
+    # Helper to safely get node data
+    def get_node(nid):
+        return all_nodes.get(str(nid)) or all_nodes.get(int(nid))
 
-    # Handle single node path or start point
-    if not route_coords and len(path) == 1:
-        n = graph.get_node(path[0])
-        route_coords.append([n['lon'], n['lat']])
+    for node_id in path_nodes:
+        n = get_node(node_id)
+        if n:
+            route_coords.append(f"{{ lat: {n['lat']}, lng: {n['lon']} }}")
+            
+    start_node = get_node(path_nodes[0])
+    end_node = get_node(path_nodes[-1])
 
-    # 2. Prepare POIs as GeoJSON FeatureCollection
-    poi_features = []
-    for p in pois:
-        poi_features.append({
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [p['lon'], p['lat']]
-            },
-            "properties": {
-                "name": p['name'],
-                "type": p.get('type', 'POI')
-            }
-        })
+    if not start_node or not end_node:
+        print("⚠️ Visualizer: Could not find start/end node coordinates.")
+        return
 
-    # 3. Calculate Map Center
-    start_node = graph.get_node(path[0])
-    center_lon = start_node['lon']
-    center_lat = start_node['lat']
-
-    # 4. Generate the HTML (Using MapLibre + OpenFreeMap Style)
+    # 2. Create HTML Content with Google Maps JS
     html_content = f"""
     <!DOCTYPE html>
     <html>
     <head>
-        <meta charset="utf-8" />
         <title>NUST Intelligent Navigation</title>
-        <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-        <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-        <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+        <script src="https://maps.googleapis.com/maps/api/js?key={GOOGLE_API_KEY}&libraries=places"></script>
         <style>
-            body {{ margin: 0; padding: 0; }}
-            #map {{ position: absolute; top: 0; bottom: 0; width: 100%; }}
-            .legend {{
-                background-color: #fff;
-                border-radius: 3px;
-                bottom: 30px;
-                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-                font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
-                padding: 10px;
-                position: absolute;
-                right: 10px;
-                z-index: 1;
+            body, html {{ height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; }}
+            #map {{ height: 100%; width: 100%; }}
+            #panel {{
+                position: absolute; top: 20px; left: 20px; width: 320px;
+                background: white; padding: 20px; border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 100;
+            }}
+            h2 {{ margin: 0 0 10px 0; color: #004a99; font-size: 18px; }}
+            .meta {{ font-size: 14px; color: #555; margin-bottom: 5px; }}
+            .badge {{ 
+                display: inline-block; background: #e3f2fd; color: #0d47a1; 
+                padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;
             }}
         </style>
     </head>
     <body>
-        <div id="map"></div>
-        <div class="legend">
-            <h4>Route Analytics</h4>
-            <div><span style="background-color: #3b82f6; width: 10px; height: 10px; display: inline-block;"></span> Calculated Path</div>
-            <div><span style="background-color: #ef4444; width: 10px; height: 10px; display: inline-block;"></span> POIs</div>
+        <div id="panel">
+            <h2>NUST Navigation System</h2>
+            <div class="meta"><span class="badge">ALGORITHM</span> Custom A* Search</div>
+            <div class="meta"><span class="badge">DATA</span> Google Maps Elevation</div>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+            <p class="meta"><strong>Start:</strong> {start_node['lat']:.5f}, {start_node['lon']:.5f}</p>
+            <p class="meta"><strong>End:</strong> {end_node['lat']:.5f}, {end_node['lon']:.5f}</p>
         </div>
+        <div id="map"></div>
+
         <script>
-            const map = new maplibregl.Map({{
-                container: 'map',
-                style: 'https://tiles.openfreemap.org/styles/liberty', 
-                center: [{center_lon}, {center_lat}],
-                zoom: 14
-            }});
-
-            map.on('load', () => {{
-                
-                // LAYER 1: The Path
-                map.addSource('route', {{
-                    'type': 'geojson',
-                    'data': {{
-                        'type': 'Feature',
-                        'properties': {{}},
-                        'geometry': {{
-                            'type': 'LineString',
-                            'coordinates': {json.dumps(route_coords)}
-                        }}
-                    }}
-                }});
-                
-                map.addLayer({{
-                    'id': 'route',
-                    'type': 'line',
-                    'source': 'route',
-                    'layout': {{
-                        'line-join': 'round',
-                        'line-cap': 'round'
-                    }},
-                    'paint': {{
-                        'line-color': '#3b82f6',
-                        'line-width': 6,
-                        'line-opacity': 0.8
-                    }}
+            function initMap() {{
+                const map = new google.maps.Map(document.getElementById("map"), {{
+                    zoom: 16,
+                    center: {{ lat: 33.6415, lng: 72.9910 }}, // NUST Center
+                    mapTypeId: "roadmap",
+                    styles: [
+                        {{ featureType: "poi", elementType: "labels", stylers: [{{ visibility: "off" }}] }}
+                    ]
                 }});
 
-                // LAYER 2: POIs
-                map.addSource('pois', {{
-                    'type': 'geojson',
-                    'data': {{
-                        'type': 'FeatureCollection',
-                        'features': {json.dumps(poi_features)}
-                    }}
+                // The Path calculated by Python
+                const routePath = [
+                    {",".join(route_coords)}
+                ];
+
+                // Draw the Polyline
+                const flightPath = new google.maps.Polyline({{
+                    path: routePath,
+                    geodesic: true,
+                    strokeColor: "#2979FF",
+                    strokeOpacity: 1.0,
+                    strokeWeight: 5
+                }});
+                flightPath.setMap(map);
+
+                // Start Marker
+                new google.maps.Marker({{
+                    position: routePath[0],
+                    map: map,
+                    label: "A",
+                    title: "Start Point"
                 }});
 
-                map.addLayer({{
-                    'id': 'pois',
-                    'type': 'circle',
-                    'source': 'pois',
-                    'paint': {{
-                        'circle-radius': 8,
-                        'circle-color': '#ef4444',
-                        'circle-stroke-width': 2,
-                        'circle-stroke-color': '#ffffff'
-                    }}
-                }});
-
-                // Add popups on click for POIs
-                map.on('click', 'pois', (e) => {{
-                    const coordinates = e.features[0].geometry.coordinates.slice();
-                    const name = e.features[0].properties.name;
-                    new maplibregl.Popup()
-                        .setLngLat(coordinates)
-                        .setHTML('<strong>' + name + '</strong>')
-                        .addTo(map);
-                }});
-
-                // Change cursor on hover
-                map.on('mouseenter', 'pois', () => {{
-                    map.getCanvas().style.cursor = 'pointer';
-                }});
-                map.on('mouseleave', 'pois', () => {{
-                    map.getCanvas().style.cursor = '';
+                // End Marker
+                new google.maps.Marker({{
+                    position: routePath[routePath.length - 1],
+                    map: map,
+                    label: "B",
+                    title: "Destination"
                 }});
                 
-                // Fit bounds to route
-                const coords = {json.dumps(route_coords)};
-                if (coords.length > 0) {{
-                    const bounds = coords.reduce((bounds, coord) => {{
-                        return bounds.extend(coord);
-                    }}, new maplibregl.LngLatBounds(coords[0], coords[0]));
-                    map.fitBounds(bounds, {{ padding: 50 }});
-                }}
-            }});
+                // Auto-zoom to fit route
+                const bounds = new google.maps.LatLngBounds();
+                routePath.forEach(pt => bounds.extend(pt));
+                map.fitBounds(bounds);
+            }}
+            
+            window.onload = initMap;
         </script>
     </body>
     </html>
@@ -194,6 +124,9 @@ def visualize_path(graph, path: list, pois: list = [], output_file: str = "map.h
 
     with open(output_file, "w") as f:
         f.write(html_content)
-    
-    print(f"Map generated: {output_file} (Using OpenFreeMap Tiles)")
-    webbrowser.open('file://' + os.path.realpath(output_file))
+
+    print(f"🗺️ Map Generated: {output_file}")
+    try:
+        webbrowser.open('file://' + os.path.realpath(output_file))
+    except:
+        pass
