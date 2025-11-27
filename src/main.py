@@ -1,6 +1,7 @@
-from structures import CityGraph
-from algorithms import a_star_search
-from visualizer import generate_map  # <--- CHANGE 1
+from .structures import CityGraph
+from .algorithms import a_star_search
+from .visualizer import generate_map  # <--- CHANGE 1
+import os
 
 def get_user_selection(pois_list, prompt_text):
     # ... (Same as before) ...
@@ -45,7 +46,16 @@ def main():
     print("=== NUST Intelligent Navigation System ===")
     
     city = CityGraph()
-    city.load_data('data/nodes.json', 'data/edges.json', 'data/pois.json')
+    
+    # === UPDATE PATHS ===
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_dir = os.path.join(base_dir, "data")
+    
+    city.load_data(
+        os.path.join(data_dir, 'nodes.json'), 
+        os.path.join(data_dir, 'edges.json'), 
+        os.path.join(data_dir, 'pois.json')
+    )
     
     if not city.pois:
         print("CRITICAL: No POIs loaded. Run data_pipeline.py first!")

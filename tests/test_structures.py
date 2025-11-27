@@ -2,14 +2,14 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from structures import CityGraph, MinHeap
+from src.structures import CityGraph, MinHeap
 
 def test_graph_loading():
     print("--- Testing Graph Loading ---")
     # Get parent directory (project root)
     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    nodes_path = os.path.join(parent_dir, 'nodes.json')
-    edges_path = os.path.join(parent_dir, 'edges.json')
+    nodes_path = os.path.join(parent_dir, 'data', 'nodes.json')
+    edges_path = os.path.join(parent_dir, 'data', 'edges.json')
     
     city = CityGraph()
     city.load_data(nodes_path, edges_path)
