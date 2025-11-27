@@ -1,0 +1,86 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>NUST Intelligent Navigation</title>
+        <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places"></script>
+        <style>
+            body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; }
+            #map { height: 100%; width: 100%; }
+            #panel {
+                position: absolute; top: 20px; left: 20px; width: 320px;
+                background: white; padding: 20px; border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 100;
+            }
+            h2 { margin: 0 0 10px 0; color: #004a99; font-size: 18px; }
+            .meta { font-size: 14px; color: #555; margin-bottom: 5px; }
+            .badge { 
+                display: inline-block; background: #e3f2fd; color: #0d47a1; 
+                padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="panel">
+            <h2>NUST Navigation System</h2>
+            <div class="meta"><span class="badge">ALGORITHM</span> Custom A* Search</div>
+            <div class="meta"><span class="badge">DATA</span> Google Maps Elevation</div>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+            <p class="meta"><strong>Start:</strong> 33.65067, 72.97100</p>
+            <p class="meta"><strong>End:</strong> 33.64302, 72.98832</p>
+        </div>
+        <div id="map"></div>
+
+        <script>
+            function initMap() {
+                const map = new google.maps.Map(document.getElementById("map"), {
+                    zoom: 16,
+                    center: { lat: 33.6415, lng: 72.9910 }, // NUST Center
+                    mapTypeId: "roadmap",
+                    styles: [
+                        { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }
+                    ]
+                });
+
+                // The Path calculated by Python
+                const routePath = [
+                    { lat: 33.6506733, lng: 72.9710011 },{ lat: 33.6503904, lng: 72.9704529 },{ lat: 33.6493988, lng: 72.971162 },{ lat: 33.6489476, lng: 72.9715158 },{ lat: 33.6484901, lng: 72.971857 },{ lat: 33.648068, lng: 72.9721578 },{ lat: 33.6475315, lng: 72.9725651 },{ lat: 33.6472282, lng: 72.9719936 },{ lat: 33.646415, lng: 72.9726161 },{ lat: 33.6482825, lng: 72.9761031 },{ lat: 33.648344, lng: 72.976227 },{ lat: 33.6487593, lng: 72.9771627 },{ lat: 33.6487997, lng: 72.9772367 },{ lat: 33.6489166, lng: 72.9774504 },{ lat: 33.6492389, lng: 72.9780403 },{ lat: 33.6499748, lng: 72.9794546 },{ lat: 33.6499609, lng: 72.9796805 },{ lat: 33.6498656, lng: 72.9798831 },{ lat: 33.6494659, lng: 72.9822332 },{ lat: 33.6488666, lng: 72.9798493 },{ lat: 33.648144, lng: 72.9784586 },{ lat: 33.645952, lng: 72.979731 },{ lat: 33.6459311, lng: 72.9800076 },{ lat: 33.6460558, lng: 72.9803568 },{ lat: 33.6461336, lng: 72.9805488 },{ lat: 33.6461041, lng: 72.9819967 },{ lat: 33.6460024, lng: 72.9826545 },{ lat: 33.6456134, lng: 72.9851646 },{ lat: 33.6454943, lng: 72.9851386 },{ lat: 33.645445, lng: 72.9851172 },{ lat: 33.644762, lng: 72.9851693 },{ lat: 33.6443442, lng: 72.9850474 },{ lat: 33.644235, lng: 72.985034 },{ lat: 33.6439376, lng: 72.9850137 },{ lat: 33.6439288, lng: 72.9850815 },{ lat: 33.6438155, lng: 72.9850763 },{ lat: 33.6436052, lng: 72.9851093 },{ lat: 33.6436234, lng: 72.9851779 },{ lat: 33.6437592, lng: 72.9859024 },{ lat: 33.6437789, lng: 72.9863522 },{ lat: 33.6438474, lng: 72.9866337 },{ lat: 33.6436269, lng: 72.9871758 },{ lat: 33.6435354, lng: 72.9871905 },{ lat: 33.6435149, lng: 72.9873318 },{ lat: 33.6433736, lng: 72.987492 },{ lat: 33.6431793, lng: 72.9877056 },{ lat: 33.6431219, lng: 72.9878628 },{ lat: 33.6431281, lng: 72.9878906 },{ lat: 33.643001, lng: 72.987867 },{ lat: 33.6427724, lng: 72.9880463 },{ lat: 33.6427635, lng: 72.9881053 },{ lat: 33.6429466, lng: 72.988395 },{ lat: 33.6430046, lng: 72.9884271 },{ lat: 33.643018, lng: 72.9883185 }
+                ];
+
+                // Draw the Polyline
+                const flightPath = new google.maps.Polyline({
+                    path: routePath,
+                    geodesic: true,
+                    strokeColor: "#2979FF",
+                    strokeOpacity: 1.0,
+                    strokeWeight: 5
+                });
+                flightPath.setMap(map);
+
+                // Start Marker
+                new google.maps.Marker({
+                    position: routePath[0],
+                    map: map,
+                    label: "A",
+                    title: "Start Point"
+                });
+
+                // End Marker
+                new google.maps.Marker({
+                    position: routePath[routePath.length - 1],
+                    map: map,
+                    label: "B",
+                    title: "Destination"
+                });
+                
+                // Auto-zoom to fit route
+                const bounds = new google.maps.LatLngBounds();
+                routePath.forEach(pt => bounds.extend(pt));
+                map.fitBounds(bounds);
+            }
+            
+            window.onload = initMap;
+        </script>
+    </body>
+    </html>
+    
