@@ -11,6 +11,14 @@ def generate_map(path_nodes, all_nodes, output_file="map.html"):
     all_nodes: Dictionary of node data {id: {lat: x, lon: y...}}
     """
     
+    # If only a filename is provided, save it to 'outputs/' in project root
+    if os.path.dirname(output_file) == "":
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        output_dir = os.path.join(base_dir, "outputs")
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        output_file = os.path.join(output_dir, output_file)
+
     if not path_nodes or len(path_nodes) < 2:
         print("⚠️ Visualizer: Not enough nodes to plot a path.")
         return

@@ -1,5 +1,5 @@
 import math
-from structures import MinHeap
+from .structures import MinHeap
 
 METERS_PER_DEG_LAT = 111000
 METERS_PER_DEG_LON = 93000 

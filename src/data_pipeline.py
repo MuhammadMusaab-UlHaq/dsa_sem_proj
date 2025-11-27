@@ -14,7 +14,8 @@ LOCATION_POINT = (33.6415, 72.9910)
 DIST_RADIUS = 2000 
 
 # File Paths
-DATA_DIR = "data"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(BASE_DIR, "data")
 NODES_FILE = os.path.join(DATA_DIR, "nodes.json")
 EDGES_FILE = os.path.join(DATA_DIR, "edges.json")
 POIS_FILE = os.path.join(DATA_DIR, "pois.json")

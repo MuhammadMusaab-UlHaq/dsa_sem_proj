@@ -2,8 +2,8 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from structures import CityGraph
-from algorithms import a_star_search, multi_stop_route
+from src.structures import CityGraph
+from src.algorithms import a_star_search, multi_stop_route
 import random
 
 def get_distant_node(graph, start_node, steps=10):
@@ -25,8 +25,8 @@ def run_test():
     # 1. Load Graph
     # Get parent directory (project root)
     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    nodes_path = os.path.join(parent_dir, 'nodes.json')
-    edges_path = os.path.join(parent_dir, 'edges.json')
+    nodes_path = os.path.join(parent_dir, 'data', 'nodes.json')
+    edges_path = os.path.join(parent_dir, 'data', 'edges.json')
     
     city = CityGraph()
     city.load_data(nodes_path, edges_path)
