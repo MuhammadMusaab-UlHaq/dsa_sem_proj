@@ -1,0 +1,8 @@
+desktop.ini
+.venv/
+venv/
+cache/
+data/
+__pycache__/
+directory_info.txt
+generate_context.py
