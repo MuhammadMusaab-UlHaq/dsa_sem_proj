@@ -1,0 +1,368 @@
+[
+  {
+    "name": "\u0627\u06cc\u0686-11",
+    "lat": 33.6543909,
+    "lon": 73.0091541,
+    "type": "Location"
+  },
+  {
+    "name": "Faculty Lounge",
+    "lat": 33.6453958,
+    "lon": 72.9885006,
+    "type": "cafe"
+  },
+  {
+    "name": "C2 ROAD",
+    "lat": 33.6430046,
+    "lon": 72.9884271,
+    "type": "Location"
+  },
+  {
+    "name": "Concordia 2 Cafe",
+    "lat": 33.6430227,
+    "lon": 72.9882696,
+    "type": "cafe"
+  },
+  {
+    "name": "NUST VILLAS",
+    "lat": 33.6416682,
+    "lon": 72.9976632,
+    "type": "Location"
+  },
+  {
+    "name": "Gate (2200269370)",
+    "lat": 33.6461417,
+    "lon": 72.9805717,
+    "type": "Entrance"
+  },
+  {
+    "name": "CIPS construction",
+    "lat": 33.645893,
+    "lon": 72.9859098,
+    "type": "Location"
+  },
+  {
+    "name": "Rumi Hostel",
+    "lat": 33.6455849,
+    "lon": 72.9920086,
+    "type": "Location"
+  },
+  {
+    "name": "NG cafe",
+    "lat": 33.6417485,
+    "lon": 72.9937372,
+    "type": "cafe"
+  },
+  {
+    "name": "Allied Bank Ltd - ATM Only",
+    "lat": 33.645393,
+    "lon": 72.9756494,
+    "type": "bank"
+  },
+  {
+    "name": "\u067e\u0632\u06cc\u0644\u0627 \u067e\u06cc\u0632\u0627",
+    "lat": 33.6604263,
+    "lon": 72.993303,
+    "type": "restaurant"
+  },
+  {
+    "name": "\u0633\u0648\u067e\u0631 \u06af\u0631\u0644 \u0631\u06cc\u0633\u062a\u0648\u0631\u0627\u06ba",
+    "lat": 33.6594749,
+    "lon": 72.9942208,
+    "type": "restaurant"
+  },
+  {
+    "name": "\u0627\u0639\u0648\u0627\u0646 \u0627\u0644\u06cc\u06a9\u0679\u0631\u06a9 \u0627\u0633\u0679\u0648\u0631",
+    "lat": 33.6594884,
+    "lon": 72.9940012,
+    "type": "Location"
+  },
+  {
+    "name": "ib academy",
+    "lat": 33.649705,
+    "lon": 73.0081612,
+    "type": "Location"
+  },
+  {
+    "name": "Isra Apartments",
+    "lat": 33.642177,
+    "lon": 73.0004074,
+    "type": "Location"
+  },
+  {
+    "name": "Exam center",
+    "lat": 33.6420775,
+    "lon": 72.983723,
+    "type": "Location"
+  },
+  {
+    "name": "The Wall Cafe",
+    "lat": 33.6476704,
+    "lon": 72.9905562,
+    "type": "Location"
+  },
+  {
+    "name": "Epic Fish and Shinwari",
+    "lat": 33.645394,
+    "lon": 72.9784558,
+    "type": "restaurant"
+  },
+  {
+    "name": "\u0645\u06a9\u0688\u0648\u0646\u0644\u0688\u0632",
+    "lat": 33.6452977,
+    "lon": 72.9757636,
+    "type": "fast_food"
+  },
+  {
+    "name": "Rayyan boys hostel",
+    "lat": 33.6409644,
+    "lon": 72.980579,
+    "type": "Location"
+  },
+  {
+    "name": "Entrance Cafe",
+    "lat": 33.6487138,
+    "lon": 72.9995939,
+    "type": "cafe"
+  },
+  {
+    "name": "Jango",
+    "lat": 33.6393961,
+    "lon": 72.9880189,
+    "type": "cafe"
+  },
+  {
+    "name": "SMME",
+    "lat": 33.6363223,
+    "lon": 72.9894125,
+    "type": "Location"
+  },
+  {
+    "name": "NUST Saddle Club",
+    "lat": 33.6373732,
+    "lon": 72.9924923,
+    "type": "Location"
+  },
+  {
+    "name": "NPA",
+    "lat": 33.6497646,
+    "lon": 73.0015639,
+    "type": "police"
+  },
+  {
+    "name": "Gate 2",
+    "lat": 33.6573085,
+    "lon": 73.0157471,
+    "type": "Location"
+  },
+  {
+    "name": "I-12 (PHA Flats)",
+    "lat": 33.6273836,
+    "lon": 73.0046825,
+    "type": "Location"
+  },
+  {
+    "name": "Shandoor Boys Hostel",
+    "lat": 33.6499191,
+    "lon": 72.976354,
+    "type": "Location"
+  },
+  {
+    "name": "\u0645\u0632\u0627\u0631",
+    "lat": 33.6585049,
+    "lon": 72.9965683,
+    "type": "place_of_worship"
+  },
+  {
+    "name": "Electrobes",
+    "lat": 33.6346023,
+    "lon": 72.9846104,
+    "type": "Location"
+  },
+  {
+    "name": "Gate (7913313555)",
+    "lat": 33.6460555,
+    "lon": 72.9806408,
+    "type": "Entrance"
+  },
+  {
+    "name": "ghulam hussain flat",
+    "lat": 33.6433946,
+    "lon": 72.9770427,
+    "type": "Location"
+  },
+  {
+    "name": "Iqbal Square",
+    "lat": 33.6454544,
+    "lon": 72.9855624,
+    "type": "Location"
+  },
+  {
+    "name": "NUST Metro Bus Station",
+    "lat": 33.6553501,
+    "lon": 72.9929839,
+    "type": "Location"
+  },
+  {
+    "name": "G-12 west nust station",
+    "lat": 33.6500223,
+    "lon": 72.9824858,
+    "type": "Location"
+  },
+  {
+    "name": "NUST Metro Bus Station",
+    "lat": 33.6554888,
+    "lon": 72.9928527,
+    "type": "Location"
+  },
+  {
+    "name": "nust gogay chany",
+    "lat": 33.639997,
+    "lon": 72.9926537,
+    "type": "Location"
+  },
+  {
+    "name": "daulat bank",
+    "lat": 33.642972,
+    "lon": 72.9919262,
+    "type": "bank"
+  },
+  {
+    "name": "\u0627\u06cc\u0686-12",
+    "lat": 33.643728,
+    "lon": 72.991979,
+    "type": "Location"
+  },
+  {
+    "name": "\u0627\u06cc\u0686-13",
+    "lat": 33.6366772,
+    "lon": 72.9754502,
+    "type": "Location"
+  },
+  {
+    "name": "Noor Lodge",
+    "lat": 33.6495898,
+    "lon": 72.9768154,
+    "type": "Location"
+  },
+  {
+    "name": "Amna Hostel",
+    "lat": 33.6440018,
+    "lon": 72.9952173,
+    "type": "Location"
+  },
+  {
+    "name": "NUST Security CheckPost",
+    "lat": 33.6459687,
+    "lon": 72.9801256,
+    "type": "Location"
+  },
+  {
+    "name": "Medical School",
+    "lat": 33.6485836,
+    "lon": 72.9948565,
+    "type": "Location"
+  },
+  {
+    "name": "G-12 West nust station",
+    "lat": 33.6499073,
+    "lon": 72.9825827,
+    "type": "Location"
+  },
+  {
+    "name": "Gate 1",
+    "lat": 33.6569406,
+    "lon": 73.0150498,
+    "type": "Location"
+  },
+  {
+    "name": "Hostel",
+    "lat": 33.6410383,
+    "lon": 72.9804454,
+    "type": "Location"
+  },
+  {
+    "name": "NUST Metro Bus Station North",
+    "lat": 33.6568808,
+    "lon": 72.9928533,
+    "type": "Location"
+  },
+  {
+    "name": "NUST Metro Bus Station South",
+    "lat": 33.6560206,
+    "lon": 72.9946197,
+    "type": "Location"
+  },
+  {
+    "name": "NUST Gate no. 2, H-12, Islamabad",
+    "lat": 33.6461008,
+    "lon": 72.9805797,
+    "type": "university"
+  },
+  {
+    "name": "Dreamland Hostel",
+    "lat": 33.6434672,
+    "lon": 72.9771791,
+    "type": "Location"
+  },
+  {
+    "name": "SECCS",
+    "lat": 33.6428642,
+    "lon": 72.990209,
+    "type": "school"
+  },
+  {
+    "name": "Gate 16 NUST",
+    "lat": 33.6429645,
+    "lon": 72.9888616,
+    "type": "university"
+  },
+  {
+    "name": "SNS Old Building",
+    "lat": 33.6368447,
+    "lon": 72.9902164,
+    "type": "school"
+  },
+  {
+    "name": "NUST Gate 15",
+    "lat": 33.6420923,
+    "lon": 72.9857111,
+    "type": "university"
+  },
+  {
+    "name": "NUST Gate 4",
+    "lat": 33.6410653,
+    "lon": 72.9836721,
+    "type": "university"
+  },
+  {
+    "name": "NUST Gate",
+    "lat": 33.6425471,
+    "lon": 72.9825669,
+    "type": "university"
+  },
+  {
+    "name": "C1 Coffee Lounge(minor)",
+    "lat": 33.6475751,
+    "lon": 72.9908389,
+    "type": "cafe"
+  },
+  {
+    "name": "Karyana store",
+    "lat": 33.6354853,
+    "lon": 72.9848859,
+    "type": "Location"
+  },
+  {
+    "name": "Federal Insurance Ombudsman Regional Office",
+    "lat": 33.6598849,
+    "lon": 72.996806,
+    "type": "courthouse"
+  },
+  {
+    "name": "Federal Insurance Ombudsman Regional Office Islamabad",
+    "lat": 33.6599046,
+    "lon": 72.9968225,
+    "type": "courthouse"
+  }
+]
