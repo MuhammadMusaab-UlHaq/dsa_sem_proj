@@ -1,0 +1,86 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>NUST Intelligent Navigation</title>
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDjkvqozp-7DoEnMVS7kv1Rl4I80gDxjtc&libraries=places"></script>
+        <style>
+            body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; }
+            #map { height: 100%; width: 100%; }
+            #panel {
+                position: absolute; top: 20px; left: 20px; width: 320px;
+                background: white; padding: 20px; border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 100;
+            }
+            h2 { margin: 0 0 10px 0; color: #004a99; font-size: 18px; }
+            .meta { font-size: 14px; color: #555; margin-bottom: 5px; }
+            .badge { 
+                display: inline-block; background: #e3f2fd; color: #0d47a1; 
+                padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="panel">
+            <h2>NUST Navigation System</h2>
+            <div class="meta"><span class="badge">ALGORITHM</span> Custom A* Search</div>
+            <div class="meta"><span class="badge">DATA</span> Google Maps Elevation</div>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+            <p class="meta"><strong>Start:</strong> 33.64161, 72.99208</p>
+            <p class="meta"><strong>End:</strong> 33.64606, 72.98036</p>
+        </div>
+        <div id="map"></div>
+
+        <script>
+            function initMap() {
+                const map = new google.maps.Map(document.getElementById("map"), {
+                    zoom: 16,
+                    center: { lat: 33.6415, lng: 72.9910 }, // NUST Center
+                    mapTypeId: "roadmap",
+                    styles: [
+                        { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }
+                    ]
+                });
+
+                // The Path calculated by Python
+                const routePath = [
+                    { lat: 33.6416092, lng: 72.992078 },{ lat: 33.6417895, lng: 72.9931638 },{ lat: 33.6422844, lng: 72.9936709 },{ lat: 33.6422318, lng: 72.9938169 },{ lat: 33.6422097, lng: 72.9938968 },{ lat: 33.6421675, lng: 72.9938706 },{ lat: 33.6412505, lng: 72.9919121 },{ lat: 33.642093, lng: 72.9894086 },{ lat: 33.6421698, lng: 72.9892384 },{ lat: 33.6425694, lng: 72.9881898 },{ lat: 33.6425912, lng: 72.9880928 },{ lat: 33.6426655, lng: 72.9876819 },{ lat: 33.6426736, lng: 72.9875385 },{ lat: 33.6426234, lng: 72.9869202 },{ lat: 33.6421668, lng: 72.9858172 },{ lat: 33.6421095, lng: 72.9856983 },{ lat: 33.6422126, lng: 72.9856324 },{ lat: 33.6424317, lng: 72.9854931 },{ lat: 33.6433993, lng: 72.9851422 },{ lat: 33.6436052, lng: 72.9851093 },{ lat: 33.6438155, lng: 72.9850763 },{ lat: 33.6439288, lng: 72.9850815 },{ lat: 33.6442282, lng: 72.9851015 },{ lat: 33.6443955, lng: 72.9851346 },{ lat: 33.6452117, lng: 72.985463 },{ lat: 33.6454456, lng: 72.9852499 },{ lat: 33.6454943, lng: 72.9851386 },{ lat: 33.6458987, lng: 72.9826396 },{ lat: 33.6459105, lng: 72.9825538 },{ lat: 33.6460435, lng: 72.980609 },{ lat: 33.6458223, lng: 72.9801157 },{ lat: 33.6455483, lng: 72.9800424 },{ lat: 33.6454868, lng: 72.979879 },{ lat: 33.6455666, lng: 72.9796281 },{ lat: 33.6458546, lng: 72.9795964 },{ lat: 33.645952, lng: 72.979731 },{ lat: 33.6459311, lng: 72.9800076 },{ lat: 33.6460558, lng: 72.9803568 }
+                ];
+
+                // Draw the Polyline
+                const flightPath = new google.maps.Polyline({
+                    path: routePath,
+                    geodesic: true,
+                    strokeColor: "#2979FF",
+                    strokeOpacity: 1.0,
+                    strokeWeight: 5
+                });
+                flightPath.setMap(map);
+
+                // Start Marker
+                new google.maps.Marker({
+                    position: routePath[0],
+                    map: map,
+                    label: "A",
+                    title: "Start Point"
+                });
+
+                // End Marker
+                new google.maps.Marker({
+                    position: routePath[routePath.length - 1],
+                    map: map,
+                    label: "B",
+                    title: "Destination"
+                });
+                
+                // Auto-zoom to fit route
+                const bounds = new google.maps.LatLngBounds();
+                routePath.forEach(pt => bounds.extend(pt));
+                map.fitBounds(bounds);
+            }
+            
+            window.onload = initMap;
+        </script>
+    </body>
+    </html>
+    
