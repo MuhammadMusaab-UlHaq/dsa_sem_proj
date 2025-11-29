@@ -1,5 +1,5 @@
 from .structures import CityGraph
-# [Task 3 Fix] Added get_distance_meters to import
+# [Task 3] Added get_distance_meters to imports
 from .algorithms import a_star_search, bfs_search, get_distance_meters
 from .visualizer import generate_map
 import os
@@ -9,7 +9,7 @@ import sys
 city = None
 nav_stack = [] 
 
-# --- NAVIGATION STACK LOGIC ---
+# --- NAVIGATION STACK LOGIC (Task 2) ---
 def navigate_to(next_func):
     """Pushes current menu to stack and executes next."""
     nav_stack.append(main_menu) 
@@ -133,7 +133,7 @@ def route_selection_menu():
         path, turns = bfs_search(city, start_id, end_id)
         if path: print(f"Info: Path found with {turns} intersections.")
 
-    # [TASK 3] INTEGRATING THE CALCULATOR LOGIC HERE
+    # [TASK 3] INTEGRATING THE CALCULATOR LOGIC
     if path:
         # 1. Calculate Real Distance
         real_dist = calculate_exact_distance(city, path)
