@@ -1,10 +1,10 @@
 from .structures import CityGraph
-from .algorithms import a_star_search
-from .visualizer import generate_map  # <--- CHANGE 1
+from .algorithms import a_star_search, get_k_shortest_paths, simulate_traffic, reset_traffic
+from .visualizer import generate_map 
+from .history_manager import log_trip, get_history # <--- NEW IMPORT
 import os
 
 def get_user_selection(pois_list, prompt_text):
-    # ... (Same as before) ...
     while True:
         print(f"\n--- {prompt_text} ---")
         query = input("Search Location (e.g., 'Cafe', 'Library', 'Gate'): ").lower().strip()
@@ -33,7 +33,6 @@ def calculate_stats(graph, path):
         u = graph.nodes[path[i]]
         v = graph.nodes[path[i+1]]
         
-        # <--- CHANGE 2: Handle 'elevation' key from new pipeline
         ele_u = u.get('elevation', 0)
         ele_v = v.get('elevation', 0)
         
@@ -47,7 +46,6 @@ def main():
     
     city = CityGraph()
     
-    # === UPDATE PATHS ===
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_dir = os.path.join(base_dir, "data")
     
@@ -61,53 +59,104 @@ def main():
         print("CRITICAL: No POIs loaded. Run data_pipeline.py first!")
         return
 
-    # 1. Interactive Input
-    start_lat, start_lon, start_name = get_user_selection(city.pois, "Select START Point")
-    end_lat, end_lon, end_name = get_user_selection(city.pois, "Select DESTINATION")
-    
-    # 2. Mode Selection
-    print("\nSelect Transport Mode:")
-    print("  1. Walking (Optimizes for Flat Terrain)")
-    print("  2. Driving (Optimizes for Speed)")
-    m_choice = input("Choice (1/2): ")
-    mode = 'walk' if m_choice == '1' else 'car'
-    
-    print(f"\n[Process] Snapping '{start_name}' to nearest {mode} road...")
-    start_id = city.find_nearest_node(start_lat, start_lon, mode=mode)
-    end_id = city.find_nearest_node(end_lat, end_lon, mode=mode)
-    
-    print(f"[Process] Calculating {mode.upper()} route...")
-    path, time_cost = a_star_search(city, start_id, end_id, mode=mode)
+    # --- MAIN MENU LOOP ---
+    rush_hour_active = False
+    traffic_mods = []
 
-    if not path:
-        print("Error: No path found.")
-        return
+    while True:
+        print("\n=== MAIN MENU ===")
+        print("1. Plan a Trip")
+        print(f"2. Toggle Rush Hour Mode (Currently: {'ON' if rush_hour_active else 'OFF'})")
+        print("3. View Search History")
+        print("4. Exit")
+        
+        menu_choice = input("Select option: ")
+        
+        if menu_choice == '2':
+            # Task 2: Traffic Simulation Integration
+            if not rush_hour_active:
+                traffic_mods = simulate_traffic(city)
+                rush_hour_active = True
+                print(">> Rush Hour Mode ACTIVATED. Highways are slower.")
+            else:
+                reset_traffic(city, traffic_mods)
+                rush_hour_active = False
+                traffic_mods = []
+                print(">> Rush Hour Mode DEACTIVATED.")
+            continue
+            
+        elif menu_choice == '3':
+            # Task 3: History Integration
+            print("\n--- Search History ---")
+            history = get_history()
+            for line in history:
+                print(line.strip())
+            input("\nPress Enter to return...")
+            continue
+            
+        elif menu_choice == '4':
+            print("Goodbye!")
+            break
+            
+        elif menu_choice == '1':
+            pass # Continue to Trip Logic
+        else:
+            print("Invalid option.")
+            continue
 
-    # 3. Analytics
-    minutes = time_cost / 60.0
-    climb, descent = calculate_stats(city, path)
-    
-    print(f"\n[Results] Trip to {end_name}:")
-    print(f" - Estimated Time: {minutes:.1f} min")
-    print(f" - Total Climb: {climb:.1f} meters")
-    
-    # 4. Nearby POIs
-    print("\n[POI] Services along route:")
-    found_pois = []
-    for i in range(0, len(path), 10): 
-        n = city.get_node(path[i])
-        found_pois.extend(city.spatial.get_nearby(n['lat'], n['lon']))
+        # --- TRIP PLANNING ---
+        start_lat, start_lon, start_name = get_user_selection(city.pois, "Select START Point")
+        end_lat, end_lon, end_name = get_user_selection(city.pois, "Select DESTINATION")
+        
+        print("\nSelect Transport Mode:")
+        print("  1. Walking (Optimizes for Flat Terrain)")
+        print("  2. Driving (Optimizes for Speed)")
+        m_choice = input("Choice (1/2): ")
+        mode = 'walk' if m_choice == '1' else 'car'
+        
+        print(f"\n[Process] Snapping '{start_name}' to nearest {mode} road...")
+        start_id = city.find_nearest_node(start_lat, start_lon, mode=mode)
+        end_id = city.find_nearest_node(end_lat, end_lon, mode=mode)
+        
+        print(f"[Process] Calculating {mode.upper()} routes...")
+        
+        # Task 1: K-Shortest Paths Integration
+        paths_found = get_k_shortest_paths(city, start_id, end_id, k=3, mode=mode)
 
-    unique_pois = {p['name']: p for p in found_pois if p['name'] not in [start_name, end_name]}.values()
-    
-    if unique_pois:
-        for p in list(unique_pois)[:5]: 
-            print(f" - {p['name']}")
-    else:
-        print(" - None found.")
+        if not paths_found:
+            print("Error: No path found.")
+            continue
 
-    # <--- CHANGE 3: Call the Google Maps generator
-    generate_map(path, city.nodes)
+        print(f"\n--- Recommended Routes to {end_name} ---")
+        best_path = paths_found[0][0] # Default to best
+        
+        for i, (path, cost) in enumerate(paths_found):
+            minutes = cost / 60.0
+            climb, descent = calculate_stats(city, path)
+            label = "(Best)" if i == 0 else f"(Alt {i})"
+            print(f"Route {i+1} {label}: {minutes:.1f} min | Climb: {climb:.0f}m")
+        
+        # Log the BEST trip to history (Task 3 Integration)
+        best_time = paths_found[0][1] / 60.0
+        log_trip(start_name, end_name, mode, best_time)
+        print(">> Trip logged to history.")
+
+        # POI Logic (Using Best Path)
+        print("\n[POI] Services along best route:")
+        found_pois = []
+        for i in range(0, len(best_path), 10): 
+            n = city.get_node(best_path[i])
+            found_pois.extend(city.spatial.get_nearby(n['lat'], n['lon']))
+
+        unique_pois = {p['name']: p for p in found_pois if p['name'] not in [start_name, end_name]}.values()
+        
+        if unique_pois:
+            for p in list(unique_pois)[:5]: 
+                print(f" - {p['name']}")
+        else:
+            print(" - None found.")
+
+        generate_map(best_path, city.nodes)
 
 if __name__ == "__main__":
     main()
