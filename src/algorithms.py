@@ -1,5 +1,5 @@
 import math
-from .structures import MinHeap
+from structures import MinHeap
 
 METERS_PER_DEG_LAT = 111000
 METERS_PER_DEG_LON = 93000 
@@ -97,6 +97,10 @@ def reconstruct_path(came_from, current):
 
 def _modify_edge_weight(graph, u, v, new_weight):
     """Helper to modify immutable tuple in adj_list"""
+    # Safety Check: Prevent crash if node doesn't exist
+    if u not in graph.adj_list:
+        return None
+
     neighbors = graph.adj_list[u]
     for i, data in enumerate(neighbors):
         if data[0] == v:
@@ -116,7 +120,7 @@ def simulate_traffic(graph):
     
     print("🚦 Applying Traffic Delays...")
     for u, edges in graph.adj_list.items():
-        for i, edge in enumerate(edges):
+        for edge in edges: # Removed unused 'i' and enumerate
             # Edge structure: (v, weight, is_walk, is_drive, geometry, highway_type)
             v = edge[0]
             weight = edge[1]
@@ -129,6 +133,7 @@ def simulate_traffic(graph):
                 modifications.append((u, v, weight))
     
     return modifications
+
 
 def reset_traffic(graph, modifications):
     """Resets the graph weights back to normal."""
@@ -144,7 +149,7 @@ def get_k_shortest_paths(graph, start_id, end_id, k=3, mode='car'):
     found_paths = []
     penalized_edges = [] # Stores (u, v, original_weight) to reset later
 
-    for i in range(k):
+    for _ in range(k): # Changed unused 'i' to '_'
         # 1. Find best path on current graph
         path, cost = a_star_search(graph, start_id, end_id, mode)
         

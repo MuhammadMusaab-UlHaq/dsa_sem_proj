@@ -1,7 +1,7 @@
-from .structures import CityGraph
-from .algorithms import a_star_search, get_k_shortest_paths, simulate_traffic, reset_traffic
-from .visualizer import generate_map 
-from .history_manager import log_trip, get_history # <--- NEW IMPORT
+from structures import CityGraph
+from algorithms import a_star_search, get_k_shortest_paths, simulate_traffic, reset_traffic
+from visualizer import generate_map 
+from history_manager import log_trip, get_history
 import os
 
 def get_user_selection(pois_list, prompt_text):
@@ -46,6 +46,7 @@ def main():
     
     city = CityGraph()
     
+    # Locate data relative to this script
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_dir = os.path.join(base_dir, "data")
     
@@ -106,7 +107,17 @@ def main():
 
         # --- TRIP PLANNING ---
         start_lat, start_lon, start_name = get_user_selection(city.pois, "Select START Point")
-        end_lat, end_lon, end_name = get_user_selection(city.pois, "Select DESTINATION")
+        
+        # --- NEW VALIDATION: Prevent Same Start/End Node ---
+        while True:
+            end_lat, end_lon, end_name = get_user_selection(city.pois, "Select DESTINATION")
+            
+            if start_name == end_name:
+                print(f"\n⚠️  Invalid Selection: You are already at '{start_name}'.")
+                print("   Please select a different destination.")
+                continue # Loop back
+            break # Validation passed
+        # ---------------------------------------------------
         
         print("\nSelect Transport Mode:")
         print("  1. Walking (Optimizes for Flat Terrain)")
