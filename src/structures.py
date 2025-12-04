@@ -1,5 +1,74 @@
 import json
 
+class TrieNode:
+    """Node in the Trie structure for efficient prefix searching"""
+    def __init__(self):
+        self.children = {}  # Dictionary: char -> TrieNode
+        self.is_end_of_word = False
+        self.poi_data = None  # Store complete POI info when word ends
+
+class Trie:
+    """Trie data structure for autocomplete suggestions"""
+    def __init__(self):
+        self.root = TrieNode()
+    
+    def insert(self, word, poi_data=None):
+        """
+        Insert a word into the Trie
+        Args:
+            word (str): POI name to insert
+            poi_data (dict): Full POI information (coordinates, type, etc.)
+        """
+        node = self.root
+        word = word.lower()  # Case-insensitive search
+        
+        for char in word:
+            if char not in node.children:
+                node.children[char] = TrieNode()
+            node = node.children[char]
+        
+        node.is_end_of_word = True
+        node.poi_data = poi_data
+    
+    def search_prefix(self, prefix):
+        """
+        Find all words with given prefix
+        Args:
+            prefix (str): Search prefix (e.g., "conc")
+        Returns:
+            list: All matching POI names with their data
+        """
+        prefix = prefix.lower()
+        node = self.root
+        
+        # Navigate to prefix end
+        for char in prefix:
+            if char not in node.children:
+                return []  # Prefix not found
+            node = node.children[char]
+        
+        # Collect all words from this point
+        suggestions = []
+        self._collect_words(node, prefix, suggestions)
+        return suggestions[:10]  # Return top 10 suggestions
+    
+    def _collect_words(self, node, current_word, suggestions):
+        """
+        Recursively collect all complete words from current node
+        Args:
+            node (TrieNode): Current node in traversal
+            current_word (str): Word built so far
+            suggestions (list): Accumulator for results
+        """
+        if node.is_end_of_word:
+            suggestions.append({
+                'name': current_word,
+                'data': node.poi_data
+            })
+        
+        for char, child_node in node.children.items():
+            self._collect_words(child_node, current_word + char, suggestions)
+
 class MinHeap:
     def __init__(self): self.heap = []
     def push(self, item):
@@ -53,7 +122,8 @@ class CityGraph:
         self.spatial = SpatialGrid()
         self.drive_nodes = set()
         self.walk_nodes = set()
-        self.pois = [] 
+        self.pois = []
+        self.poi_trie = Trie()  # Trie for POI autocomplete 
 
     def load_data(self, nodes_file, edges_file, pois_file="pois.json"):
         print("Loading graph data...")
@@ -79,13 +149,34 @@ class CityGraph:
                     self.walk_nodes.add(u); self.walk_nodes.add(v)
         
         try:
-            with open(pois_file, 'r') as f: self.pois = json.load(f)
-            for p in self.pois: self.spatial.add_poi(p['name'], p['lat'], p['lon'], p['type'])
-        except: pass
+            with open(pois_file, 'r', encoding='utf-8') as f: 
+                self.pois = json.load(f)
+            
+            print(f"🔍 Loading {len(self.pois)} POIs into search index...")
+            for p in self.pois:
+                self.spatial.add_poi(p['name'], p['lat'], p['lon'], p['type'])
+                # Insert POI into Trie for autocomplete
+                self.poi_trie.insert(p['name'], p)
+            
+            print(f"✅ Search index ready with {len(self.pois)} locations")
+        except FileNotFoundError:
+            print(f"⚠️  POI file not found: {pois_file}")
+        except Exception as e:
+            print(f"⚠️  Error loading POIs: {e}")
 
     # UPDATED: Returns 5 items now
     def get_neighbors(self, node_id): return self.adj_list.get(node_id, [])
     def get_node(self, node_id): return self.nodes.get(node_id)
+    
+    def autocomplete(self, prefix):
+        """
+        Get autocomplete suggestions for POI search
+        Args:
+            prefix (str): User's partial input (e.g., "gat")
+        Returns:
+            list: Matching POI suggestions
+        """
+        return self.poi_trie.search_prefix(prefix)
     
     # --- THE SMART SNAP ALGORITHM ---
     def find_nearest_node(self, target_lat, target_lon, mode='car'):
