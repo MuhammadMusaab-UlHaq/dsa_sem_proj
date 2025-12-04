@@ -1,5 +1,5 @@
-from structures import CityGraph
-from algorithms import a_star_search, get_k_shortest_paths, simulate_traffic, reset_traffic, optimize_route_order
+from structures import CityGraph, merge_sort
+from algorithms import a_star_search, get_k_shortest_paths, simulate_traffic, reset_traffic, optimize_route_order, get_distance_meters
 from visualizer import generate_map 
 from history_manager import log_trip, get_history
 import os
@@ -280,8 +280,21 @@ def main():
         unique_pois = {p['name']: p for p in found_pois if p['name'] not in [start_name, end_name]}.values()
         
         if unique_pois:
-            for p in list(unique_pois)[:5]: 
-                print(f" - {p['name']}")
+            # Calculate distance from start point for each POI
+            start_node = city.get_node(best_path[0])
+            poi_list = []
+            for p in unique_pois:
+                distance = get_distance_meters(start_node, {'lat': p['lat'], 'lon': p['lon']})
+                poi_list.append({'poi': p, 'distance': distance})
+            
+            # Task 3: Sort POIs by distance using Merge Sort
+            sorted_pois = merge_sort(poi_list, key=lambda x: x['distance'])
+            
+            # Display sorted POIs (top 5 closest)
+            for item in sorted_pois[:5]:
+                p = item['poi']
+                dist_m = item['distance']
+                print(f" - {p['name']} ({dist_m:.0f}m away)")
         else:
             print(" - None found.")
 

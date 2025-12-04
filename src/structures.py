@@ -69,6 +69,83 @@ class Trie:
         for char, child_node in node.children.items():
             self._collect_words(child_node, current_word + char, suggestions)
 
+
+# ================= TASK 3: MERGE SORT (NEARBY POI SORTER) =================
+
+def merge_sort(data_list, key):
+    """
+    Task 3: Recursive Merge Sort implementation from scratch
+    
+    Sorts a list of items based on a key function using the merge sort algorithm.
+    Does NOT use Python's built-in .sort() method.
+    
+    Args:
+        data_list: List of items to sort (e.g., list of POI dictionaries)
+        key: Function to extract comparison value from each item
+             Example: lambda poi: poi['distance']
+    
+    Returns:
+        list: Sorted list in ascending order based on key
+    
+    Time Complexity: O(n log n)
+    Space Complexity: O(n)
+    """
+    
+    # Base case: list with 0 or 1 element is already sorted
+    if len(data_list) <= 1:
+        return data_list
+    
+    # Divide: Split list into two halves
+    mid = len(data_list) // 2
+    left_half = data_list[:mid]
+    right_half = data_list[mid:]
+    
+    # Conquer: Recursively sort both halves
+    sorted_left = merge_sort(left_half, key)
+    sorted_right = merge_sort(right_half, key)
+    
+    # Combine: Merge the sorted halves
+    return _merge(sorted_left, sorted_right, key)
+
+
+def _merge(left, right, key):
+    """
+    Helper function to merge two sorted lists
+    
+    Args:
+        left: First sorted list
+        right: Second sorted list
+        key: Function to extract comparison value
+    
+    Returns:
+        list: Merged sorted list
+    """
+    result = []
+    i = 0  # Index for left list
+    j = 0  # Index for right list
+    
+    # Merge elements from both lists in sorted order
+    while i < len(left) and j < len(right):
+        if key(left[i]) <= key(right[j]):
+            result.append(left[i])
+            i += 1
+        else:
+            result.append(right[j])
+            j += 1
+    
+    # Append remaining elements from left list (if any)
+    while i < len(left):
+        result.append(left[i])
+        i += 1
+    
+    # Append remaining elements from right list (if any)
+    while j < len(right):
+        result.append(right[j])
+        j += 1
+    
+    return result
+
+
 class MinHeap:
     def __init__(self): self.heap = []
     def push(self, item):
