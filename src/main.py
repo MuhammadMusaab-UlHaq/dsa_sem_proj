@@ -4,27 +4,41 @@ from visualizer import generate_map
 from history_manager import log_trip, get_history
 import os
 
-def get_user_selection(pois_list, prompt_text):
+def get_user_selection_with_autocomplete(graph, prompt_text):
+    """Interactive location input with Trie-based autocomplete (Task 1)"""
     while True:
         print(f"\n--- {prompt_text} ---")
-        query = input("Search Location (e.g., 'Cafe', 'Library', 'Gate'): ").lower().strip()
-        matches = [p for p in pois_list if query in p['name'].lower()]
-        if not matches:
-            print("No matches found. Try again.")
+        query = input("Type location name: ").strip()
+        
+        if not query:
+            print("❌ Empty input! Please try again.")
             continue
-        print(f"Found {len(matches)} matches:")
-        for i, p in enumerate(matches[:5]):
-            print(f"  {i+1}. {p['name']} ({p['type']})")
+        
+        # Get autocomplete suggestions using Trie
+        suggestions = graph.autocomplete(query)
+        
+        if not suggestions:
+            print(f"❌ No locations found matching '{query}'. Try different keywords.")
+            continue
+        
+        # Display suggestions
+        print(f"\n📍 Found {len(suggestions)} match(es):")
+        for i, suggestion in enumerate(suggestions, 1):
+            poi = suggestion['data']
+            print(f"  {i}. {suggestion['name']} ({poi.get('type', 'Unknown')})")
+        
+        # User selection
         try:
-            choice = int(input("Select number (0 to search again): "))
-            if choice == 0: continue
-            if 1 <= choice <= len(matches):
-                selected = matches[choice-1]
-                return selected['lat'], selected['lon'], selected['name']
+            choice = int(input(f"\nSelect location (1-{len(suggestions)}, 0 to search again): "))
+            if choice == 0:
+                continue
+            if 1 <= choice <= len(suggestions):
+                selected_poi = suggestions[choice - 1]['data']
+                return selected_poi['lat'], selected_poi['lon'], selected_poi['name']
             else:
-                print("Invalid number.")
+                print("❌ Invalid selection!")
         except ValueError:
-            print("Please enter a number.")
+            print("❌ Please enter a number!")
 
 def calculate_stats(graph, path):
     total_climb = 0
@@ -105,12 +119,12 @@ def main():
             print("Invalid option.")
             continue
 
-        # --- TRIP PLANNING ---
-        start_lat, start_lon, start_name = get_user_selection(city.pois, "Select START Point")
+        # --- TRIP PLANNING (Using Trie Autocomplete - Task 1) ---
+        start_lat, start_lon, start_name = get_user_selection_with_autocomplete(city, "Select START Point")
         
         # --- NEW VALIDATION: Prevent Same Start/End Node ---
         while True:
-            end_lat, end_lon, end_name = get_user_selection(city.pois, "Select DESTINATION")
+            end_lat, end_lon, end_name = get_user_selection_with_autocomplete(city, "Select DESTINATION")
             
             if start_name == end_name:
                 print(f"\n⚠️  Invalid Selection: You are already at '{start_name}'.")
