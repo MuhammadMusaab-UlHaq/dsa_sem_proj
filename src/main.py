@@ -1,5 +1,5 @@
 from structures import CityGraph
-from algorithms import a_star_search, get_k_shortest_paths, simulate_traffic, reset_traffic
+from algorithms import a_star_search, get_k_shortest_paths, simulate_traffic, reset_traffic, optimize_route_order
 from visualizer import generate_map 
 from history_manager import log_trip, get_history
 import os
@@ -83,7 +83,8 @@ def main():
         print("1. Plan a Trip")
         print(f"2. Toggle Rush Hour Mode (Currently: {'ON' if rush_hour_active else 'OFF'})")
         print("3. View Search History")
-        print("4. Exit")
+        print("4. Optimize Multi-Stop Route (Errand Runner)")
+        print("5. Exit")
         
         menu_choice = input("Select option: ")
         
@@ -110,6 +111,109 @@ def main():
             continue
             
         elif menu_choice == '4':
+            # Task 2: Multi-Stop Route Optimization (TSP)
+            print("\n=== OPTIMIZE MULTI-STOP ROUTE ===")
+            print("Plan an efficient route visiting multiple locations")
+            
+            # Get starting point
+            start_lat, start_lon, start_name = get_user_selection_with_autocomplete(city, "Select STARTING Point")
+            
+            # Select transport mode
+            print("\nSelect Transport Mode:")
+            print("  1. Walking")
+            print("  2. Driving")
+            m_choice = input("Choice (1/2): ")
+            mode = 'walk' if m_choice == '1' else 'car'
+            
+            # Get number of stops
+            print("\nHow many stops do you want to visit? (Recommended: 3-4)")
+            try:
+                num_stops = int(input("Number of stops: "))
+                if num_stops < 2 or num_stops > 6:
+                    print("⚠️  Please choose between 2-6 stops for optimal performance")
+                    continue
+            except ValueError:
+                print("❌ Invalid number")
+                continue
+            
+            # Collect all stops
+            stops_info = []
+            stop_names = [start_name]  # Track names to prevent duplicates
+            
+            for i in range(num_stops):
+                while True:
+                    stop_lat, stop_lon, stop_name = get_user_selection_with_autocomplete(
+                        city, f"Select STOP #{i+1}"
+                    )
+                    
+                    if stop_name in stop_names:
+                        print(f"⚠️  You've already selected '{stop_name}'. Choose a different location.")
+                        continue
+                    
+                    stop_names.append(stop_name)
+                    stops_info.append((stop_lat, stop_lon, stop_name))
+                    break
+            
+            # Snap all locations to graph nodes
+            print(f"\n[Process] Snapping locations to {mode} roads...")
+            start_id = city.find_nearest_node(start_lat, start_lon, mode=mode)
+            stop_ids = []
+            
+            for stop_lat, stop_lon, stop_name in stops_info:
+                stop_id = city.find_nearest_node(stop_lat, stop_lon, mode=mode)
+                stop_ids.append(stop_id)
+            
+            # Run TSP optimization
+            print(f"[Process] Optimizing route order for {num_stops} stops...")
+            best_order, total_cost, segments = optimize_route_order(city, start_id, stop_ids, mode)
+            
+            if not best_order:
+                print("❌ Could not find valid route")
+                continue
+            
+            # Display results
+            print(f"\n{'='*60}")
+            print("📍 OPTIMIZED ROUTE ORDER")
+            print(f"{'='*60}")
+            print(f"🏁 Start: {start_name}")
+            
+            for idx, stop_id in enumerate(best_order, 1):
+                # Find the stop name
+                stop_name = stops_info[stop_ids.index(stop_id)][2]
+                print(f"   ↓")
+                print(f"{idx}. {stop_name}")
+            
+            print(f"\n⏱️  Total Estimated Time: {total_cost/60:.1f} minutes")
+            print(f"🚗 Transport Mode: {mode.upper()}")
+            print(f"{'='*60}")
+            
+            # Reconstruct full path for visualization
+            full_path = []
+            route_nodes = [start_id] + best_order
+            
+            for i in range(len(route_nodes) - 1):
+                segment_path = segments[(route_nodes[i], route_nodes[i+1])]
+                if i == 0:
+                    full_path.extend(segment_path)
+                else:
+                    full_path.extend(segment_path[1:])  # Avoid duplicate nodes
+            
+            # Calculate statistics
+            climb, descent = calculate_stats(city, full_path)
+            print(f"⛰️  Total Climb: {climb:.0f}m | Descent: {descent:.0f}m")
+            
+            # Log to history
+            stops_str = " → ".join([start_name] + [stops_info[stop_ids.index(sid)][2] for sid in best_order])
+            log_trip(stops_str[:50], "Multi-Stop", mode, total_cost/60)
+            print(">> Route logged to history.")
+            
+            # Generate map
+            generate_map(full_path, city.nodes)
+            
+            input("\nPress Enter to return to main menu...")
+            continue
+            
+        elif menu_choice == '5':
             print("Goodbye!")
             break
             
