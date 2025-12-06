@@ -23,9 +23,11 @@ outputs/
 desktop.ini
 .DS_Store
 
-# Generated reports
+# Generated reports & helper python files
 directory_info.txt
 complete_repository_report.txt
+generate_context.py
+generate_full_report.py
 *.swp
 
 # Test artifacts
