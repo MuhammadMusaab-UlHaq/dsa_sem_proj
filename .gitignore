@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-hello.exe
-=======
 desktop.ini
 .venv/
 venv/
@@ -9,7 +6,5 @@ data/
 __pycache__/
 directory_info.txt
 generate_context.py
->>>>>>> c12ed213ba1ff10798178d69c5bcaca55f29b4d1
-
 generate_full_report.py
 complete_repository_report.txt
