@@ -3,7 +3,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.structures import CityGraph
-from src.algorithms import a_star_search, multi_stop_route
+from src.algorithms import a_star_search, multi_stop_route, bfs_search
 import random
 
 def get_distant_node(graph, start_node, steps=10):
@@ -92,6 +92,19 @@ def run_test():
         print(f"Total Cost: {m_cost:.2f}")
     else:
         print("Multi-stop failed.")
+
+        print(f"\n--- Test 4: BFS (Simplest Route) ---")
+    bfs_path, bfs_hops = bfs_search(city, start_node, end_node)
+    
+    if bfs_path:
+        print(f"BFS Path Found!")
+        print(f"Total Intersections (Nodes visited): {bfs_hops}")
+        if len(bfs_path) > 10:
+             print(f"BFS Route: {bfs_path[:3]} ... {bfs_path[-3:]}")
+        else:
+             print(f"BFS Route: {bfs_path}")
+    else:
+        print("BFS failed to find a path.")
 
 if __name__ == "__main__":
     run_test()
