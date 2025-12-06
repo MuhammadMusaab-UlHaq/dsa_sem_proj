@@ -1,5 +1,5 @@
 import math
-from .structures import MinHeap
+from structures import MinHeap
 
 METERS_PER_DEG_LAT = 111000
 METERS_PER_DEG_LON = 93000 
@@ -45,17 +45,17 @@ def a_star_search(graph, start_id, end_id, mode='car'):
         if current_id == end_id:
             return reconstruct_path(came_from, current_id), g_score[end_id]
 
-        # --- FIX IS HERE ---
-        # We now unpack 6 values. The last two are geometry and highway_type, which we ignore with _
         neighbors = graph.get_neighbors(current_id)
         for neighbor_data in neighbors:
-            # Safe unpacking for variable length tuples (Robustness)
+            # neighbor_data: (v, weight, is_walk, is_drive, geometry, highway_type)
             neighbor_id = neighbor_data[0]
             dist = neighbor_data[1]
             is_walk = neighbor_data[2]
             is_drive = neighbor_data[3]
-            # indices 4 and 5 are geometry and highway_type, ignored here
             
+            # If weight is infinity (penalized), skip
+            if dist == float('inf'): continue
+
             if mode == 'car' and not is_drive: continue
             if mode == 'walk' and not is_walk: continue
             
@@ -93,15 +93,86 @@ def reconstruct_path(came_from, current):
         total_path.append(current)
     return total_path[::-1]
 
-def multi_stop_route(graph, stops, mode='car'):
-    full_path = []
-    total_cost = 0
-    for i in range(len(stops) - 1):
-        start = stops[i]
-        end = stops[i+1]
-        segment_path, segment_cost = a_star_search(graph, start, end, mode)
-        if not segment_path: return None, float('inf')
-        if i > 0: full_path.extend(segment_path[1:])
-        else: full_path.extend(segment_path)
-        total_cost += segment_cost
-    return full_path, total_cost
+# ================= NEW FEATURES IMPLEMENTATION =================
+
+def _modify_edge_weight(graph, u, v, new_weight):
+    """Helper to modify immutable tuple in adj_list"""
+    # Safety Check: Prevent crash if node doesn't exist
+    if u not in graph.adj_list:
+        return None
+
+    neighbors = graph.adj_list[u]
+    for i, data in enumerate(neighbors):
+        if data[0] == v:
+            # Reconstruct tuple: (v, NEW_WEIGHT, is_walk, is_drive, geometry, highway)
+            new_tuple = (data[0], new_weight, data[2], data[3], data[4], data[5])
+            graph.adj_list[u][i] = new_tuple
+            return data[1] # Return old weight
+    return None
+
+def simulate_traffic(graph):
+    """
+    Task 2: Traffic Simulation
+    Iterate all edges. If highway type is primary/trunk, multiply weight by 3.0.
+    Returns a list of modifications to allow resetting.
+    """
+    modifications = [] # Stores (u, v, original_weight)
+    
+    print("🚦 Applying Traffic Delays...")
+    for u, edges in graph.adj_list.items():
+        for edge in edges: # Removed unused 'i' and enumerate
+            # Edge structure: (v, weight, is_walk, is_drive, geometry, highway_type)
+            v = edge[0]
+            weight = edge[1]
+            highway_type = edge[5]
+            
+            if highway_type in ['primary', 'trunk', 'primary_link', 'trunk_link']:
+                new_weight = weight * 3.0
+                # Use helper to apply change
+                _modify_edge_weight(graph, u, v, new_weight)
+                modifications.append((u, v, weight))
+    
+    return modifications
+
+
+def reset_traffic(graph, modifications):
+    """Resets the graph weights back to normal."""
+    for u, v, original_weight in modifications:
+        _modify_edge_weight(graph, u, v, original_weight)
+    print("🚦 Traffic cleared.")
+
+def get_k_shortest_paths(graph, start_id, end_id, k=3, mode='car'):
+    """
+    Task 1: K-Shortest Paths
+    Finds top k distinct routes by iteratively penalizing used edges.
+    """
+    found_paths = []
+    penalized_edges = [] # Stores (u, v, original_weight) to reset later
+
+    for _ in range(k): # Changed unused 'i' to '_'
+        # 1. Find best path on current graph
+        path, cost = a_star_search(graph, start_id, end_id, mode)
+        
+        if not path:
+            break
+            
+        found_paths.append((path, cost))
+        
+        # 2. Penalize edges in this path (Set weight to Infinity)
+        # This forces A* to find a different route next time
+        for j in range(len(path) - 1):
+            u, v = path[j], path[j+1]
+            old_w = _modify_edge_weight(graph, u, v, float('inf'))
+            if old_w is not None:
+                penalized_edges.append((u, v, old_w))
+                
+                # Since graph is undirected for weights usually, try penalizing reverse too if exists
+                old_w_rev = _modify_edge_weight(graph, v, u, float('inf'))
+                if old_w_rev is not None:
+                    penalized_edges.append((v, u, old_w_rev))
+
+    # 3. Restore Graph State (Critical!)
+    for u, v, original_weight in penalized_edges:
+        _modify_edge_weight(graph, u, v, original_weight)
+        
+    return found_paths
