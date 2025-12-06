@@ -6,3 +6,5 @@ data/
 __pycache__/
 directory_info.txt
 generate_context.py
+generate_full_report.py
+complete_repository_report.txt
