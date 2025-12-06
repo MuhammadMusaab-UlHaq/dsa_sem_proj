@@ -1,4 +1,5 @@
 import math
+from itertools import permutations
 from structures import MinHeap
 
 METERS_PER_DEG_LAT = 111000
@@ -176,3 +177,77 @@ def get_k_shortest_paths(graph, start_id, end_id, k=3, mode='car'):
         _modify_edge_weight(graph, u, v, original_weight)
         
     return found_paths
+
+
+# ================= TASK 2: TSP APPROXIMATION (ERRAND RUNNER) =================
+
+def optimize_route_order(graph, start, list_of_stops, mode='car'):
+    """
+    Task 2: TSP Approximation - Finds optimal visiting order for multiple stops
+    
+    Uses brute-force permutation approach to solve the Traveling Salesman Problem
+    for 3-4 stops. Tests all possible visiting orders and returns the shortest.
+    
+    Args:
+        graph: CityGraph instance
+        start: Starting node ID
+        list_of_stops: List of node IDs to visit (3-4 stops)
+        mode: 'car' or 'walk'
+    
+    Returns:
+        tuple: (best_order, total_distance, segment_paths)
+            - best_order: List of node IDs in optimal visiting order
+            - total_distance: Total time cost in seconds
+            - segment_paths: Dict of {(from, to): [path_nodes]} for visualization
+    """
+    
+    if not list_of_stops:
+        return [], 0, {}
+    
+    # Generate all possible visiting orders
+    all_permutations = list(permutations(list_of_stops))
+    
+    best_order = None
+    best_total_cost = float('inf')
+    best_segments = {}
+    
+    print(f"\n🔄 Evaluating {len(all_permutations)} possible route orders...")
+    
+    # Test each permutation
+    for perm in all_permutations:
+        # Build complete route: start -> stop1 -> stop2 -> ... -> stopN
+        full_route = [start] + list(perm)
+        
+        total_cost = 0
+        segments = {}
+        valid_route = True
+        
+        # Calculate cost for each segment
+        for i in range(len(full_route) - 1):
+            from_node = full_route[i]
+            to_node = full_route[i + 1]
+            
+            # Find path between consecutive stops
+            path, cost = a_star_search(graph, from_node, to_node, mode)
+            
+            if not path:
+                # No path found for this segment, skip this permutation
+                valid_route = False
+                break
+            
+            total_cost += cost
+            segments[(from_node, to_node)] = path
+        
+        # Update best if this permutation is better
+        if valid_route and total_cost < best_total_cost:
+            best_total_cost = total_cost
+            best_order = list(perm)
+            best_segments = segments.copy()
+    
+    if best_order is None:
+        print("❌ No valid route found for these stops")
+        return [], float('inf'), {}
+    
+    print(f"✅ Found optimal route! Total time: {best_total_cost/60:.1f} minutes")
+    
+    return best_order, best_total_cost, best_segments
