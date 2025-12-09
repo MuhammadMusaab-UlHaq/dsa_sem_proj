@@ -13,12 +13,121 @@ from history_manager import log_trip, get_history, get_frequent_destinations
 import os
 import sys
 import time
+from datetime import datetime, timedelta
 
 # --- GLOBAL VARIABLES ---
 city = None
 nav_stack = []
 rush_hour_active = False
 traffic_mods = []
+
+# --- TIME-BASED RUSH HOUR DETECTION ---
+def is_rush_hour(check_time=None):
+    """
+    Check if given time falls within rush hour periods.
+    Morning: 7:00 AM - 9:30 AM
+    Evening: 4:30 PM - 8:00 PM
+    """
+    if check_time is None:
+        check_time = datetime.now()
+    
+    hour = check_time.hour
+    minute = check_time.minute
+    time_decimal = hour + minute / 60.0
+    
+    # Morning rush: 7:00 - 9:30
+    if 7.0 <= time_decimal <= 9.5:
+        return True, "Morning Rush"
+    # Evening rush: 16:30 - 20:00
+    if 16.5 <= time_decimal <= 20.0:
+        return True, "Evening Rush"
+    return False, None
+
+def get_rush_hour_status():
+    """Get human-readable rush hour status."""
+    is_rush, period = is_rush_hour()
+    now = datetime.now()
+    
+    if is_rush:
+        return f"🔴 {period} Active ({now.strftime('%I:%M %p')})"
+    
+    # Calculate time until next rush hour
+    hour = now.hour
+    if hour < 7:
+        next_rush = now.replace(hour=7, minute=0, second=0)
+        mins = int((next_rush - now).total_seconds() / 60)
+        return f"⚪ Clear - Rush starts in {mins} min"
+    elif hour < 16:
+        next_rush = now.replace(hour=16, minute=30, second=0)
+        mins = int((next_rush - now).total_seconds() / 60)
+        hrs = mins // 60
+        mins = mins % 60
+        return f"⚪ Clear - Rush in {hrs}h {mins}m"
+    else:
+        return f"⚪ Clear - Next rush tomorrow 7 AM"
+
+def estimate_travel_delay(graph, start_id, end_id, mode='car'):
+    """
+    Calculate the estimated delay due to rush hour traffic.
+    Returns (normal_time, rush_time, delay_seconds).
+    """
+    # Calculate normal time
+    normal_path, normal_cost = a_star_search(graph, start_id, end_id, mode)
+    if not normal_path:
+        return None, None, None
+    
+    # Temporarily apply traffic and calculate rush time
+    mods = simulate_traffic_silent(graph)
+    rush_path, rush_cost = a_star_search(graph, start_id, end_id, mode)
+    reset_traffic_silent(graph, mods)
+    
+    if not rush_path:
+        return normal_cost, normal_cost, 0
+    
+    delay = rush_cost - normal_cost
+    return normal_cost, rush_cost, max(0, delay)
+
+def simulate_traffic_silent(graph):
+    """Apply traffic without printing messages."""
+    graph.rush_hour_active = True
+    return []
+
+def reset_traffic_silent(graph, modifications=None):
+    """Reset traffic without printing messages."""
+    graph.rush_hour_active = False
+
+def format_time_seconds(seconds):
+    """Format seconds into human-readable time."""
+    if seconds < 60:
+        return f"{int(seconds)} sec"
+    elif seconds < 3600:
+        mins = int(seconds / 60)
+        secs = int(seconds % 60)
+        return f"{mins} min {secs} sec" if secs > 0 else f"{mins} min"
+    else:
+        hrs = int(seconds / 3600)
+        mins = int((seconds % 3600) / 60)
+        return f"{hrs}h {mins}m"
+
+def calculate_departure_time(arrival_time_str, travel_seconds, with_traffic=False):
+    """
+    Calculate when to leave to arrive by target time.
+    arrival_time_str: format "HH:MM" (24-hour)
+    Returns departure datetime.
+    """
+    now = datetime.now()
+    try:
+        target_hour, target_min = map(int, arrival_time_str.split(':'))
+        arrival = now.replace(hour=target_hour, minute=target_min, second=0)
+        if arrival < now:
+            arrival += timedelta(days=1)  # Next day
+        
+        # Add buffer for traffic uncertainty
+        buffer = travel_seconds * 0.15 if with_traffic else travel_seconds * 0.05
+        departure = arrival - timedelta(seconds=travel_seconds + buffer)
+        return departure
+    except:
+        return None
 
 # --- NAVIGATION STACK LOGIC (Task 2 - Farida) ---
 def navigate_to(next_func):
@@ -250,19 +359,31 @@ def collect_route_data(graph, path, mode, time_cost, start_name, end_name, algo_
             pois_along.append({
                 'name': p['name'],
                 'type': p.get('type', 'Unknown'),
-                'distance_m': distance
+                'distance_m': distance,
+                'lat': p['lat'],
+                'lon': p['lon']
             })
         
         # Sort using merge_sort
         pois_along = merge_sort(pois_along, key=lambda x: x['distance_m'])
     
-    return route_stats, pois_along[:5]
+    return route_stats, pois_along[:10]  # Show top 10 POIs along route
 
 def display_route_results(path, mode, time_cost, start_name, end_name, algo_stats=None, alternatives=None):
     """Display route results and generate enhanced map."""
     if not path:
         print("Error: No path found.")
         return
+    
+    # Display algorithm stats if available
+    if algo_stats and algo_stats.get('nodes_explored', 0) > 0:
+        print("\n" + "-"*40)
+        print(f"  📊 Algorithm: {algo_stats.get('algorithm_name', 'Unknown')}")
+        print(f"  🔍 Nodes Explored: {algo_stats.get('nodes_explored', 0):,}")
+        if algo_stats.get('heap_operations', 0) > 0:
+            print(f"  📦 Heap Operations: {algo_stats.get('heap_operations', 0):,}")
+        print(f"  ⏱️  Compute Time: {algo_stats.get('time_ms', 0):.1f} ms")
+        print("-"*40)
     
     # Collect route data
     route_stats, pois_along = collect_route_data(city, path, mode, time_cost, start_name, end_name)
@@ -378,7 +499,12 @@ def route_selection_menu():
         path, turns, algo_stats = bfs_search(city, start_id, end_id, return_stats=True)
         if path:
             print(f"Info: Path found with {turns} intersections.")
-            time_cost = len(path) * 30
+            # Calculate actual travel time based on distance and mode
+            dist_m = calculate_exact_distance(city, path)
+            if mode == 'walk':
+                time_cost = dist_m / 1.35  # 1.35 m/s = ~5 km/h walking
+            else:
+                time_cost = dist_m / 11.11  # 11.11 m/s = ~40 km/h average driving
             display_route_results(path, mode, time_cost, start_name, end_name, algo_stats=algo_stats)
         else:
             print("Error: No path found.")
@@ -470,9 +596,9 @@ def multi_stop_route_menu():
         stop_id = city.find_nearest_node(stop_lat, stop_lon, mode=mode)
         stop_ids.append(stop_id)
     
-    # Run TSP optimization
+    # Run TSP optimization (now returns algo_stats)
     print(f"[Process] Optimizing route order for {num_stops} stops...")
-    best_order, total_cost, segments = optimize_route_order(city, start_id, stop_ids, mode)
+    best_order, total_cost, segments, algo_stats = optimize_route_order(city, start_id, stop_ids, mode)
     
     if not best_order:
         print("❌ Could not find valid route")
@@ -537,12 +663,8 @@ def multi_stop_route_menu():
             'fuel_cost': (total_dist / 1000) * 150 if mode == 'car' else 0
         }
         
-        algo_stats = {
-            'algorithm_name': 'TSP (Nearest Neighbor)' if len(stop_ids) > 4 else 'TSP (Brute Force)',
-            'nodes_explored': len(full_path),
-            'heap_operations': len(route_segments),  # Number of segments computed
-            'time_ms': 0
-        }
+        # algo_stats is now returned from optimize_route_order with real values
+        # No need to override - just use the stats from TSP optimization
         
         generate_map(
             path_nodes=full_path, 
@@ -558,20 +680,441 @@ def multi_stop_route_menu():
     input("\nPress Enter to return to main menu...")
     go_back()
 
-# --- TRAFFIC SIMULATION (Ahmed's feature) ---
+# --- TRAFFIC SIMULATION (Ahmed's feature) - ENHANCED ---
 def toggle_traffic():
     global rush_hour_active, traffic_mods
-    if not rush_hour_active:
-        traffic_mods = simulate_traffic(city)
-        rush_hour_active = True
-        print(">> Rush Hour Mode ACTIVATED. Highways are slower.")
+    
+    # Show current time and rush hour status
+    now = datetime.now()
+    is_rush, period = is_rush_hour()
+    
+    print("\n" + "="*55)
+    print("   🚦 RUSH HOUR TRAFFIC MODE")
+    print("="*55)
+    print(f"\n   Current Time: {now.strftime('%I:%M %p')}")
+    
+    if is_rush:
+        print(f"   Status: 🔴 {period} - Heavy traffic expected!")
     else:
-        reset_traffic(city, traffic_mods)
-        rush_hour_active = False
-        traffic_mods = []
-        print(">> Rush Hour Mode DEACTIVATED.")
-    input("\nPress Enter to return...")
-    main_menu()
+        print("   Status: ⚪ Normal traffic conditions")
+        # Show when next rush hour starts
+        hour = now.hour
+        if hour < 7:
+            print("   Next Rush: Morning rush begins at 7:00 AM")
+        elif hour < 16:
+            print("   Next Rush: Evening rush begins at 4:30 PM")
+        else:
+            print("   Next Rush: Tomorrow morning at 7:00 AM")
+    
+    print("\n" + "-"*55)
+    
+    if not rush_hour_active:
+        print("\n   🟢 Enable rush hour mode to simulate:")
+        print("      - 3x slower travel on major roads")
+        print("      - Primary roads & highways affected")
+        print("      - More realistic route planning")
+        if is_rush:
+            print("\n   💡 TIP: Rush hour is active now!")
+            print("      Enabling mode recommended for accurate timing.")
+    else:
+        print("\n   🔴 Rush hour mode is currently ACTIVE")
+        print("      - Major roads are 3x slower")
+        print("      - Routes account for traffic delays")
+    
+    print("\n" + "-"*55)
+    print("   Options:")
+    print("   1. Toggle Rush Hour Mode " + ("OFF" if rush_hour_active else "ON"))
+    print("   2. View Traffic Impact Analysis")
+    print("   3. Trip Time Planner")
+    print("   4. Back to Main Menu")
+    print()
+    
+    choice = input("   Select option: ").strip()
+    
+    if choice == '1':
+        if not rush_hour_active:
+            traffic_mods = simulate_traffic(city)
+            rush_hour_active = True
+            print("\n   ✅ Rush Hour Mode ACTIVATED")
+            print("      Highways and primary roads are now slower.")
+        else:
+            reset_traffic(city, traffic_mods)
+            rush_hour_active = False
+            traffic_mods = []
+            print("\n   ✅ Rush Hour Mode DEACTIVATED")
+            print("      Traffic cleared - normal speeds restored.")
+        input("\n   Press Enter to continue...")
+        toggle_traffic()
+    elif choice == '2':
+        traffic_impact_analysis()
+    elif choice == '3':
+        trip_time_planner()
+    elif choice == '4':
+        main_menu()
+    else:
+        print("   ⚠️  Invalid option")
+        toggle_traffic()
+
+def traffic_impact_analysis():
+    """Show how rush hour affects common routes."""
+    print("\n" + "="*55)
+    print("   📊 TRAFFIC IMPACT ANALYSIS")
+    print("="*55)
+    print("\n   Calculating impact on routes using major roads...\n")
+    
+    # Define routes that use major roads (NUST to city locations)
+    # These are more likely to show traffic impact
+    test_routes = [
+        ("nust gate 1", "centaurus"),
+        ("nust gate 1", "faisal mosque"),
+        ("nust main gate", "blue area"),
+        ("seecs", "f-6 markaz"),
+        ("nust gate 10", "serena hotel"),
+    ]
+    
+    print("   Route Analysis (Normal vs Rush Hour):")
+    print("   " + "-"*50)
+    
+    analyzed = 0
+    for start_query, end_query in test_routes:
+        # Find POIs matching these queries
+        start_matches = city.autocomplete(start_query)
+        end_matches = city.autocomplete(end_query)
+        
+        if not start_matches or not end_matches:
+            continue
+        
+        start_poi = start_matches[0]['data']
+        end_poi = end_matches[0]['data']
+        start_name = start_matches[0]['name']
+        end_name = end_matches[0]['name']
+        
+        start_id = city.find_nearest_node(start_poi['lat'], start_poi['lon'])
+        end_id = city.find_nearest_node(end_poi['lat'], end_poi['lon'])
+        
+        if start_id and end_id:
+            normal, rush, delay = estimate_travel_delay(city, start_id, end_id)
+            if normal and rush and normal > 60:  # Only show routes > 1 min
+                analyzed += 1
+                delay_pct = (delay / normal * 100) if normal > 0 else 0
+                
+                # Truncate names for display
+                start_display = format_poi_name(start_name)[:22]
+                end_display = format_poi_name(end_name)[:22]
+                
+                print(f"\n   {start_display}")
+                print(f"      -> {end_display}")
+                print(f"      Normal:     {format_time_seconds(normal)}")
+                print(f"      Rush Hour:  {format_time_seconds(rush)}")
+                if delay > 30:  # Show delay if > 30 seconds
+                    print(f"      ⚠️  Delay:   +{format_time_seconds(delay)} (+{delay_pct:.0f}%)")
+                else:
+                    print(f"      Delay:      Minimal (internal roads)")
+                
+                if analyzed >= 4:
+                    break
+    
+    if analyzed == 0:
+        print("   Could not find routes through major roads.")
+        print("   Try expanding the map coverage area.")
+    
+    print("\n   " + "-"*50)
+    print("   📝 Note: Rush hour affects PRIMARY and TRUNK roads")
+    print("      (highways, main arterials). Internal campus roads")
+    print("      and residential streets are less affected.")
+    print("\n   💡 Rush hour typically adds 20-50% to travel time")
+    print("      on routes using IJP Road, Margalla Road, etc.")
+    
+    input("\n   Press Enter to return...")
+    toggle_traffic()
+
+def trip_time_planner():
+    """Help user plan departure/arrival times."""
+    print("\n" + "="*55)
+    print("   ⏰ TRIP TIME PLANNER")
+    print("="*55)
+    print("\n   Plan when to leave to arrive on time!")
+    print()
+    print("   1. Calculate 'Leave By' time (I need to arrive at X)")
+    print("   2. Calculate 'Arrive By' time (I'm leaving at X)")
+    print("   3. Back to Main Menu")
+    print()
+    
+    choice = input("   Select option: ").strip()
+    
+    if choice == '1':
+        plan_leave_by()
+    elif choice == '2':
+        plan_arrive_by()
+    elif choice == '3':
+        main_menu()
+    else:
+        print("   ⚠️  Invalid option")
+        trip_time_planner()
+
+def plan_leave_by():
+    """Calculate when to leave to arrive by target time."""
+    print("\n   --- Calculate Departure Time ---")
+    print("\n   First, select your route:")
+    
+    # Get start location
+    print("\n   Start location:")
+    start_query = input("   Search: ").strip()
+    if not start_query:
+        trip_time_planner()
+        return
+    
+    # Use autocomplete which returns list of dicts with 'name' and 'data' keys
+    suggestions = city.autocomplete(start_query.lower())
+    if not suggestions:
+        print("   ⚠️  No locations found")
+        trip_time_planner()
+        return
+    
+    print("\n   Found locations:")
+    for i, item in enumerate(suggestions[:5], 1):
+        name = format_poi_name(item['name'])
+        print(f"   {i}. {name}")
+    
+    try:
+        start_choice = int(input("\n   Select start (number): ").strip()) - 1
+        if start_choice < 0 or start_choice >= min(5, len(suggestions)):
+            trip_time_planner()
+            return
+        start_item = suggestions[start_choice]
+        start_name = start_item['name']
+    except:
+        trip_time_planner()
+        return
+    
+    # Get end location
+    print("\n   Destination:")
+    end_query = input("   Search: ").strip()
+    if not end_query:
+        trip_time_planner()
+        return
+    
+    end_suggestions = city.autocomplete(end_query.lower())
+    if not end_suggestions:
+        print("   ⚠️  No locations found")
+        trip_time_planner()
+        return
+    
+    print("\n   Found locations:")
+    for i, item in enumerate(end_suggestions[:5], 1):
+        name = format_poi_name(item['name'])
+        print(f"   {i}. {name}")
+    
+    try:
+        end_choice = int(input("\n   Select destination (number): ").strip()) - 1
+        if end_choice < 0 or end_choice >= min(5, len(end_suggestions)):
+            trip_time_planner()
+            return
+        end_item = end_suggestions[end_choice]
+        end_name = end_item['name']
+    except:
+        trip_time_planner()
+        return
+    
+    # Get arrival time
+    print("\n   What time do you need to arrive?")
+    arrival_str = input("   Enter time (HH:MM, 24hr format): ").strip()
+    
+    # Get POI data from the autocomplete results
+    start_poi = start_item['data']
+    end_poi = end_item['data']
+    
+    if not start_poi or not end_poi:
+        print("   ⚠️  Could not find locations")
+        trip_time_planner()
+        return
+    
+    start_id = city.find_nearest_node(start_poi['lat'], start_poi['lon'])
+    end_id = city.find_nearest_node(end_poi['lat'], end_poi['lon'])
+    
+    if not start_id or not end_id:
+        print("   ⚠️  Locations not connected to road network")
+        trip_time_planner()
+        return
+    
+    # Get travel times
+    normal_time, rush_time, delay = estimate_travel_delay(city, start_id, end_id)
+    
+    if not normal_time:
+        print("   ⚠️  Could not calculate route")
+        trip_time_planner()
+        return
+    
+    # Parse arrival time and calculate departure
+    try:
+        target_hour, target_min = map(int, arrival_str.split(':'))
+        now = datetime.now()
+        arrival = now.replace(hour=target_hour, minute=target_min, second=0)
+        if arrival < now:
+            arrival += timedelta(days=1)
+        
+        # Check if route will be during rush hour
+        departure_check = arrival - timedelta(seconds=rush_time)
+        will_be_rush, _ = is_rush_hour(departure_check)
+        
+        travel_time = rush_time if will_be_rush else normal_time
+        buffer = travel_time * 0.15  # 15% buffer for safety
+        departure = arrival - timedelta(seconds=travel_time + buffer)
+        
+        print("\n" + "="*55)
+        print("   📋 TRIP PLAN")
+        print("="*55)
+        print(f"\n   Route: {start_name}")
+        print(f"       -> {end_name}")
+        print(f"\n   Target Arrival: {arrival.strftime('%I:%M %p')}")
+        print()
+        
+        if will_be_rush:
+            print("   ⚠️  Your trip falls during rush hour!")
+            print(f"   Expected Travel Time: {format_time_seconds(rush_time)}")
+            print(f"   (Normal time would be: {format_time_seconds(normal_time)})")
+        else:
+            print(f"   Expected Travel Time: {format_time_seconds(normal_time)}")
+        
+        print(f"\n   ✅ RECOMMENDED DEPARTURE: {departure.strftime('%I:%M %p')}")
+        print(f"      (includes {int(buffer/60)} min buffer)")
+        
+    except Exception as e:
+        print(f"   ⚠️  Invalid time format. Use HH:MM (e.g., 09:00)")
+    
+    input("\n   Press Enter to return...")
+    trip_time_planner()
+
+def plan_arrive_by():
+    """Calculate estimated arrival time when leaving at specific time."""
+    print("\n   --- Calculate Arrival Time ---")
+    print("\n   First, select your route:")
+    
+    # Get start location
+    print("\n   Start location:")
+    start_query = input("   Search: ").strip()
+    if not start_query:
+        trip_time_planner()
+        return
+    
+    # Use autocomplete which returns list of dicts with 'name' and 'data' keys
+    suggestions = city.autocomplete(start_query.lower())
+    if not suggestions:
+        print("   ⚠️  No locations found")
+        trip_time_planner()
+        return
+    
+    print("\n   Found locations:")
+    for i, item in enumerate(suggestions[:5], 1):
+        name = format_poi_name(item['name'])
+        print(f"   {i}. {name}")
+    
+    try:
+        start_choice = int(input("\n   Select start (number): ").strip()) - 1
+        if start_choice < 0 or start_choice >= min(5, len(suggestions)):
+            trip_time_planner()
+            return
+        start_item = suggestions[start_choice]
+        start_name = start_item['name']
+    except:
+        trip_time_planner()
+        return
+    
+    # Get end location
+    print("\n   Destination:")
+    end_query = input("   Search: ").strip()
+    if not end_query:
+        trip_time_planner()
+        return
+    
+    end_suggestions = city.autocomplete(end_query.lower())
+    if not end_suggestions:
+        print("   ⚠️  No locations found")
+        trip_time_planner()
+        return
+    
+    print("\n   Found locations:")
+    for i, item in enumerate(end_suggestions[:5], 1):
+        name = format_poi_name(item['name'])
+        print(f"   {i}. {name}")
+    
+    try:
+        end_choice = int(input("\n   Select destination (number): ").strip()) - 1
+        if end_choice < 0 or end_choice >= min(5, len(end_suggestions)):
+            trip_time_planner()
+            return
+        end_item = end_suggestions[end_choice]
+        end_name = end_item['name']
+    except:
+        trip_time_planner()
+        return
+    
+    # Get departure time
+    print("\n   What time are you leaving?")
+    departure_str = input("   Enter time (HH:MM, 24hr format): ").strip()
+    
+    # Get POI data from the autocomplete results
+    start_poi = start_item['data']
+    end_poi = end_item['data']
+    
+    if not start_poi or not end_poi:
+        print("   ⚠️  Could not find locations")
+        trip_time_planner()
+        return
+    
+    start_id = city.find_nearest_node(start_poi['lat'], start_poi['lon'])
+    end_id = city.find_nearest_node(end_poi['lat'], end_poi['lon'])
+    
+    if not start_id or not end_id:
+        print("   ⚠️  Locations not connected to road network")
+        trip_time_planner()
+        return
+    
+    # Get travel times
+    normal_time, rush_time, delay = estimate_travel_delay(city, start_id, end_id)
+    
+    if not normal_time:
+        print("   ⚠️  Could not calculate route")
+        trip_time_planner()
+        return
+    
+    # Parse departure time and calculate arrival
+    try:
+        dep_hour, dep_min = map(int, departure_str.split(':'))
+        now = datetime.now()
+        departure = now.replace(hour=dep_hour, minute=dep_min, second=0)
+        if departure < now:
+            departure += timedelta(days=1)
+        
+        # Check if departure is during rush hour
+        will_be_rush, period = is_rush_hour(departure)
+        travel_time = rush_time if will_be_rush else normal_time
+        arrival = departure + timedelta(seconds=travel_time)
+        
+        print("\n" + "="*55)
+        print("   📋 TRIP ESTIMATE")
+        print("="*55)
+        print(f"\n   Route: {start_name}")
+        print(f"       -> {end_name}")
+        print(f"\n   Departure: {departure.strftime('%I:%M %p')}")
+        print()
+        
+        if will_be_rush:
+            print(f"   ⚠️  Departing during {period}!")
+            print(f"   Expected Travel Time: {format_time_seconds(rush_time)}")
+            print(f"   (Normal time would be: {format_time_seconds(normal_time)})")
+            if delay > 0:
+                print(f"   Rush hour adds: +{format_time_seconds(delay)}")
+        else:
+            print(f"   Expected Travel Time: {format_time_seconds(normal_time)}")
+        
+        print(f"\n   ✅ ESTIMATED ARRIVAL: {arrival.strftime('%I:%M %p')}")
+        
+    except Exception as e:
+        print(f"   ⚠️  Invalid time format. Use HH:MM (e.g., 09:00)")
+    
+    input("\n   Press Enter to return...")
+    trip_time_planner()
 
 # --- VIEW HISTORY (Ahmed's feature) ---
 def view_history():
@@ -614,19 +1157,46 @@ def view_history():
 # --- MAIN MENU ---
 def main_menu():
     global rush_hour_active
+    
+    # Check real-time rush hour status
+    is_rush, period = is_rush_hour()
+    now = datetime.now()
+    
     print("\n")
-    print("  ╔═══════════════════════════════════════════════╗")
-    print("  ║     🌸 NUST Intelligent Navigation System     ║")
-    print("  ╠═══════════════════════════════════════════════╣")
-    print("  ║                                               ║")
-    print("  ║   1. 🗺️  Find Route (A* / BFS)                ║")
-    print("  ║   2. 📍 Multi-Stop Route (TSP)                ║")
-    traffic_status = "🔴 ON" if rush_hour_active else "⚪ OFF"
-    print(f"  ║   3. 🚦 Rush Hour Mode [{traffic_status}]              ║")
-    print("  ║   4. 📜 View Trip History                     ║")
-    print("  ║   5. 🚪 Exit                                  ║")
-    print("  ║                                               ║")
-    print("  ╚═══════════════════════════════════════════════╝")
+    print("  ╔═══════════════════════════════════════════════════════╗")
+    print("  ║       🌸 NUST Intelligent Navigation System          ║")
+    print("  ╠═══════════════════════════════════════════════════════╣")
+    
+    # Show current time and rush hour indicator
+    time_str = now.strftime('%I:%M %p')
+    if is_rush:
+        print(f"  ║   ⏰ {time_str} | 🔴 {period} Active               ║")
+    else:
+        print(f"  ║   ⏰ {time_str} | ⚪ Normal Traffic                ║")
+    
+    print("  ╠═══════════════════════════════════════════════════════╣")
+    print("  ║                                                       ║")
+    print("  ║   1. 🗺️  Find Route (A* / BFS)                        ║")
+    print("  ║   2. 📍 Multi-Stop Route (TSP)                        ║")
+    
+    # Enhanced traffic menu option
+    if rush_hour_active:
+        print("  ║   3. 🚦 Rush Hour Mode [🔴 ENABLED]                   ║")
+    elif is_rush:
+        print("  ║   3. 🚦 Rush Hour Mode [⚠️  Recommended!]             ║")
+    else:
+        print("  ║   3. 🚦 Rush Hour Mode [⚪ OFF]                       ║")
+    
+    print("  ║   4. 📜 View Trip History                             ║")
+    print("  ║   5. ⏰ Trip Time Planner                              ║")
+    print("  ║   6. 🚪 Exit                                          ║")
+    print("  ║                                                       ║")
+    print("  ╚═══════════════════════════════════════════════════════╝")
+    
+    # Show tip if rush hour is active but mode is off
+    if is_rush and not rush_hour_active:
+        print(f"\n  💡 TIP: Enable Rush Hour Mode for accurate {period} times!")
+    
     print()
     
     choice = input("  Select option: ").strip()
@@ -640,6 +1210,8 @@ def main_menu():
     elif choice == '4':
         view_history()
     elif choice == '5':
+        trip_time_planner()
+    elif choice == '6':
         print("\n  👋 Goodbye! Safe travels.\n")
         sys.exit()
     else:

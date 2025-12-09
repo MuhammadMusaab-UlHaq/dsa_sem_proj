@@ -2,6 +2,7 @@
 .venv/
 venv/
 env/
+.env
 
 # IDE
 .vscode/
@@ -11,9 +12,6 @@ env/
 cache/
 __pycache__/
 *.pyc
-
-# Data (generated)
-data/
 
 # Output files
 outputs/

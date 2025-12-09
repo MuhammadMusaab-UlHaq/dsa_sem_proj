@@ -1,5 +1,6 @@
 import sys
 import os
+import traceback
 
 # Add 'src' to the python path so imports work correctly
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
@@ -13,3 +14,4 @@ if __name__ == "__main__":
         print("\nProgram terminated by user.")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+        traceback.print_exc()

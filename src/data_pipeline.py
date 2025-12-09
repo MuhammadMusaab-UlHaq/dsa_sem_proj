@@ -6,8 +6,8 @@ import os
 import time
 
 # ================= CONFIGURATION =================
-# Your Google Maps API Key
-GOOGLE_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY" 
+# Google Maps API Key - set via environment variable
+GOOGLE_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "") 
 
 # Islamabad Coverage - Multiple areas to cover more ground
 # Center point between NUST and major Islamabad areas
@@ -67,8 +67,15 @@ def build_nust_database():
     # 4. Extract POIs
     print("[3/4] Extracting POIs...")
     tags = {
-        'amenity': ['cafe', 'fast_food', 'fuel', 'library', 'university', 'parking', 'restaurant'],
-        'building': ['university', 'dormitory', 'residential', 'commercial'],
+        'amenity': [
+            'cafe', 'fast_food', 'fuel', 'library', 'university', 'parking', 'restaurant',
+            'hospital', 'clinic', 'pharmacy', 'bank', 'atm', 'police', 'fire_station',
+            'bus_station', 'taxi', 'place_of_worship', 'school', 'college',
+            'marketplace', 'cinema', 'theatre', 'gym', 'sports_centre'
+        ],
+        'building': ['university', 'hospital', 'hotel', 'commercial', 'mosque', 'church'],
+        'shop': ['mall', 'supermarket', 'convenience'],
+        'tourism': ['hotel', 'guest_house', 'museum', 'attraction'],
         'barrier': ['gate']
     }
     
@@ -78,11 +85,20 @@ def build_nust_database():
         for _, row in pois_gdf.iterrows():
             if 'name' in row and str(row['name']) != 'nan':
                 pt = row.geometry.centroid
+                # Determine POI type with priority order
+                poi_type = None
+                for field in ['amenity', 'tourism', 'shop', 'building']:
+                    if field in row and str(row.get(field)) != 'nan':
+                        poi_type = row.get(field)
+                        break
+                if not poi_type or str(poi_type) == 'nan':
+                    poi_type = 'landmark'
+                
                 poi_list.append({
                     "name": row['name'],
                     "lat": pt.y,
                     "lon": pt.x,
-                    "type": row.get('amenity', row.get('building', 'poi'))
+                    "type": poi_type
                 })
     except Exception as e:
         print(f"      Warning: POI extraction skipped ({e})")

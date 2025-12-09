@@ -8,7 +8,8 @@ import os
 import json
 from datetime import datetime
 
-GOOGLE_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY"
+# Google Maps API Key - set via environment variable
+GOOGLE_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
 
 def generate_map(
     path_nodes,
@@ -117,6 +118,12 @@ def generate_map(
                     waypoints_data.append({"label": label, "coord": coord, "order": i})
             waypoints_js = json.dumps(waypoints_data)
 
+    # Serialize POIs to JS for map markers
+    pois_js = json.dumps([
+        {"name": p.get('name', 'Unknown'), "lat": p.get('lat'), "lng": p.get('lon'), "type": p.get('type', 'poi'), "distance_m": p.get('distance_m', 0)}
+        for p in pois_along_route if p.get('lat') and p.get('lon')
+    ])
+
     fun_stats = generate_fun_stats(route_stats)
     
     html_content = build_html(
@@ -132,7 +139,8 @@ def generate_map(
         alternatives_js=alt_routes_js,
         fun_stats=fun_stats,
         multi_stop_js=multi_stop_js,
-        waypoints_js=waypoints_js
+        waypoints_js=waypoints_js,
+        pois_js=pois_js
     )
 
     with open(output_file, "w", encoding="utf-8") as f:
@@ -189,7 +197,7 @@ def generate_fun_stats(route_stats):
 
 def build_html(route_coords, elevations, start_name, end_name, start_coord, end_coord,
                route_stats, algorithm_stats, pois, alternatives_js, fun_stats,
-               multi_stop_js="[]", waypoints_js="[]"):
+               multi_stop_js="[]", waypoints_js="[]", pois_js="[]"):
     """Build the complete HTML document with fixed layout."""
     
     time_min = route_stats.get('time_sec', 0) / 60
@@ -214,6 +222,10 @@ def build_html(route_coords, elevations, start_name, end_name, start_coord, end_
     nodes_explored = algorithm_stats.get('nodes_explored', 0)
     heap_ops = algorithm_stats.get('heap_operations', 0)
     compute_time = algorithm_stats.get('time_ms', 0)
+    
+    # Additional TSP stats
+    a_star_calls = algorithm_stats.get('a_star_calls', 0)
+    permutations_checked = algorithm_stats.get('permutations_checked', 0)
     
     pois_html = ""
     if pois:
@@ -773,6 +785,211 @@ def build_html(route_coords, elevations, start_name, end_name, start_coord, end_
             font-size: 20px;
         }}
 
+        /* POI Filter Popup */
+        .poi-filter-overlay {{
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(139, 69, 79, 0.3);
+            backdrop-filter: blur(4px);
+            z-index: 500;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }}
+        .poi-filter-overlay.active {{
+            opacity: 1;
+            visibility: visible;
+        }}
+        
+        .poi-filter-popup {{
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: linear-gradient(135deg, #FFF5F7 0%, #FFFFFF 100%);
+            border-radius: 24px;
+            padding: 0;
+            width: 360px;
+            max-height: 70vh;
+            box-shadow: 0 25px 50px -12px rgba(139, 69, 79, 0.25);
+            z-index: 501;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow: hidden;
+        }}
+        .poi-filter-popup.active {{
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+        }}
+        
+        .poi-popup-header {{
+            background: linear-gradient(135deg, var(--sakura-500) 0%, var(--sakura-600) 100%);
+            padding: 20px 24px;
+            position: relative;
+            overflow: hidden;
+        }}
+        .poi-popup-header::before {{
+            content: '🌸';
+            position: absolute;
+            top: -10px;
+            right: 20px;
+            font-size: 60px;
+            opacity: 0.2;
+        }}
+        .poi-popup-header h3 {{
+            margin: 0;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }}
+        .poi-popup-header p {{
+            margin: 6px 0 0 0;
+            font-size: 12px;
+            color: rgba(255,255,255,0.8);
+        }}
+        .poi-popup-close {{
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }}
+        .poi-popup-close:hover {{
+            background: rgba(255,255,255,0.3);
+            transform: rotate(90deg);
+        }}
+        
+        .poi-popup-actions {{
+            display: flex;
+            gap: 8px;
+            padding: 16px 20px;
+            background: var(--sakura-50);
+            border-bottom: 1px solid var(--sakura-100);
+        }}
+        .poi-action-btn {{
+            flex: 1;
+            padding: 10px 16px;
+            border: 2px solid var(--sakura-300);
+            border-radius: 12px;
+            background: white;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--sakura-600);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }}
+        .poi-action-btn:hover {{
+            background: var(--sakura-500);
+            border-color: var(--sakura-500);
+            color: white;
+        }}
+        .poi-action-btn .material-icons-round {{
+            font-size: 16px;
+        }}
+        
+        .poi-popup-list {{
+            padding: 12px 16px;
+            max-height: 320px;
+            overflow-y: auto;
+        }}
+        .poi-popup-list::-webkit-scrollbar {{
+            width: 6px;
+        }}
+        .poi-popup-list::-webkit-scrollbar-track {{
+            background: var(--sakura-50);
+            border-radius: 3px;
+        }}
+        .poi-popup-list::-webkit-scrollbar-thumb {{
+            background: var(--sakura-300);
+            border-radius: 3px;
+        }}
+        
+        .poi-category-item {{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            margin-bottom: 6px;
+            background: white;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }}
+        .poi-category-item:hover {{
+            background: var(--sakura-50);
+            transform: translateX(4px);
+        }}
+        .poi-category-item.selected {{
+            border-color: var(--sakura-400);
+            background: linear-gradient(135deg, var(--sakura-50) 0%, white 100%);
+        }}
+        
+        .poi-category-icon {{
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }}
+        .poi-category-info {{
+            flex: 1;
+        }}
+        .poi-category-name {{
+            font-family: 'Quicksand', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--brown-900);
+            text-transform: capitalize;
+        }}
+        .poi-category-count {{
+            font-size: 11px;
+            color: var(--brown-800);
+            opacity: 0.6;
+        }}
+        .poi-category-check {{
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            border: 2px solid var(--sakura-300);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }}
+        .poi-category-item.selected .poi-category-check {{
+            background: var(--sakura-500);
+            border-color: var(--sakura-500);
+            color: white;
+        }}
+
         /* Route info badge */
         .route-badge {{
             position: fixed;
@@ -864,13 +1081,38 @@ def build_html(route_coords, elevations, start_name, end_name, start_coord, end_
     <div class="map-view" id="mapView">
         <div id="map"></div>
         
+        <!-- POI Filter Popup -->
+        <div class="poi-filter-overlay" id="poiFilterOverlay" onclick="closePoiFilter()"></div>
+        <div class="poi-filter-popup" id="poiFilterPopup">
+            <div class="poi-popup-header">
+                <button class="poi-popup-close" onclick="closePoiFilter()">
+                    <span class="material-icons-round">close</span>
+                </button>
+                <h3><span class="material-icons-round">filter_list</span> Filter POIs</h3>
+                <p>Select which points of interest to display</p>
+            </div>
+            <div class="poi-popup-actions">
+                <button class="poi-action-btn" onclick="selectAllPois()">
+                    <span class="material-icons-round">done_all</span>
+                    Select All
+                </button>
+                <button class="poi-action-btn" onclick="selectNonePois()">
+                    <span class="material-icons-round">remove_done</span>
+                    Clear All
+                </button>
+            </div>
+            <div class="poi-popup-list" id="poiCategoryList">
+                <!-- Categories will be populated by JS -->
+            </div>
+        </div>
+        
         <!-- FIXED: Left side controls group -->
         <div class="left-controls">
             <button class="control-btn" onclick="showStart()">
                 <span class="material-icons-round">arrow_back</span>
                 Back
             </button>
-            <button class="control-btn" id="togglePoisBtn" onclick="togglePOIs()">
+            <button class="control-btn" id="togglePoisBtn" onclick="openPoiFilter()">
                 <span class="material-icons-round">place</span>
                 POIs
             </button>
@@ -929,6 +1171,7 @@ def build_html(route_coords, elevations, start_name, end_name, start_coord, end_
                             <div class="algo-stat"><strong>{heap_ops:,}</strong> heap ops</div>
                             <div class="algo-stat"><strong>{compute_time:.1f}</strong> ms</div>
                         </div>
+                        {f'<div class="algo-stats" style="margin-top:8px;"><div class="algo-stat"><strong>{a_star_calls}</strong> A* calls</div><div class="algo-stat"><strong>{permutations_checked}</strong> perms</div></div>' if a_star_calls > 0 else ''}
                     </div>
                 </div>
             </div>
@@ -1008,6 +1251,7 @@ def build_html(route_coords, elevations, start_name, end_name, start_coord, end_
         const alternativeRoutes = {alternatives_js};
         const multiStopSegments = {multi_stop_js};
         const waypoints = {waypoints_js};
+        const poiData = {pois_js};
         
         // Colors for multi-stop route segments
         const segmentColors = ['#E75480', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4'];
@@ -1041,6 +1285,127 @@ def build_html(route_coords, elevations, start_name, end_name, start_coord, end_
 
         function togglePanel(id) {{
             document.getElementById(id).classList.toggle('collapsed');
+        }}
+
+        // POI Filter System
+        const poiStyles = {{
+            'fuel': {{ color: '#EF4444', icon: '⛽', bg: '#FEE2E2' }},
+            'restaurant': {{ color: '#F97316', icon: '🍽️', bg: '#FFEDD5' }},
+            'fast_food': {{ color: '#FBBF24', icon: '🍔', bg: '#FEF3C7' }},
+            'cafe': {{ color: '#A16207', icon: '☕', bg: '#FEF3C7' }},
+            'university': {{ color: '#8B5CF6', icon: '🎓', bg: '#EDE9FE' }},
+            'library': {{ color: '#3B82F6', icon: '📚', bg: '#DBEAFE' }},
+            'parking': {{ color: '#6B7280', icon: '🅿️', bg: '#F3F4F6' }},
+            'hospital': {{ color: '#DC2626', icon: '🏥', bg: '#FEE2E2' }},
+            'pharmacy': {{ color: '#10B981', icon: '💊', bg: '#D1FAE5' }},
+            'bank': {{ color: '#059669', icon: '🏦', bg: '#D1FAE5' }},
+            'atm': {{ color: '#14B8A6', icon: '💳', bg: '#CCFBF1' }},
+            'hotel': {{ color: '#EC4899', icon: '🏨', bg: '#FCE7F3' }},
+            'mosque': {{ color: '#22C55E', icon: '🕌', bg: '#DCFCE7' }},
+            'police': {{ color: '#1E40AF', icon: '👮', bg: '#DBEAFE' }},
+            'marketplace': {{ color: '#F59E0B', icon: '🛒', bg: '#FEF3C7' }},
+            'landmark': {{ color: '#8B5CF6', icon: '🏛️', bg: '#EDE9FE' }},
+            'default': {{ color: '#F59E0B', icon: '📍', bg: '#FEF3C7' }}
+        }};
+        
+        let selectedCategories = new Set();
+        let poiByCategory = {{}};
+        
+        function initPoiCategories() {{
+            // Group POIs by category
+            poiByCategory = {{}};
+            poiData.forEach((poi, idx) => {{
+                const cat = poi.type || 'default';
+                if (!poiByCategory[cat]) poiByCategory[cat] = [];
+                poiByCategory[cat].push(idx);
+            }});
+            
+            // Select all categories by default
+            selectedCategories = new Set(Object.keys(poiByCategory));
+            
+            // Build category list UI
+            const listEl = document.getElementById('poiCategoryList');
+            listEl.innerHTML = '';
+            
+            Object.keys(poiByCategory).sort().forEach(cat => {{
+                const style = poiStyles[cat] || poiStyles['default'];
+                const count = poiByCategory[cat].length;
+                
+                const item = document.createElement('div');
+                item.className = 'poi-category-item selected';
+                item.dataset.category = cat;
+                item.onclick = () => toggleCategory(cat);
+                
+                item.innerHTML = `
+                    <div class="poi-category-icon" style="background: ${{style.bg}}">
+                        ${{style.icon}}
+                    </div>
+                    <div class="poi-category-info">
+                        <div class="poi-category-name">${{cat.replace('_', ' ')}}</div>
+                        <div class="poi-category-count">${{count}} location${{count !== 1 ? 's' : ''}}</div>
+                    </div>
+                    <div class="poi-category-check">
+                        <span class="material-icons-round" style="font-size: 16px;">check</span>
+                    </div>
+                `;
+                
+                listEl.appendChild(item);
+            }});
+        }}
+        
+        function toggleCategory(cat) {{
+            if (selectedCategories.has(cat)) {{
+                selectedCategories.delete(cat);
+            }} else {{
+                selectedCategories.add(cat);
+            }}
+            updateCategoryUI();
+            applyPoiFilter();
+        }}
+        
+        function selectAllPois() {{
+            selectedCategories = new Set(Object.keys(poiByCategory));
+            updateCategoryUI();
+            applyPoiFilter();
+        }}
+        
+        function selectNonePois() {{
+            selectedCategories.clear();
+            updateCategoryUI();
+            applyPoiFilter();
+        }}
+        
+        function updateCategoryUI() {{
+            document.querySelectorAll('.poi-category-item').forEach(item => {{
+                const cat = item.dataset.category;
+                if (selectedCategories.has(cat)) {{
+                    item.classList.add('selected');
+                }} else {{
+                    item.classList.remove('selected');
+                }}
+            }});
+            
+            // Update main button state
+            const anyVisible = selectedCategories.size > 0;
+            document.getElementById('togglePoisBtn').classList.toggle('active', anyVisible);
+        }}
+        
+        function applyPoiFilter() {{
+            poiMarkers.forEach((marker, idx) => {{
+                const poi = poiData[idx];
+                const cat = poi.type || 'default';
+                marker.setVisible(selectedCategories.has(cat));
+            }});
+        }}
+        
+        function openPoiFilter() {{
+            document.getElementById('poiFilterOverlay').classList.add('active');
+            document.getElementById('poiFilterPopup').classList.add('active');
+        }}
+        
+        function closePoiFilter() {{
+            document.getElementById('poiFilterOverlay').classList.remove('active');
+            document.getElementById('poiFilterPopup').classList.remove('active');
         }}
 
         function togglePOIs() {{
@@ -1153,6 +1518,43 @@ def build_html(route_coords, elevations, start_name, end_name, start_coord, end_
             const bounds = new google.maps.LatLngBounds();
             routeCoords.forEach(c => bounds.extend(c));
             map.fitBounds(bounds, {{ top: 50, right: 340, bottom: 100, left: 50 }});
+
+            // Create POI markers (visible by default since all categories selected)
+            poiData.forEach((poi, idx) => {{
+                if (poi.lat && poi.lng) {{
+                    const style = poiStyles[poi.type] || poiStyles['default'];
+                    const marker = new google.maps.Marker({{
+                        position: {{ lat: poi.lat, lng: poi.lng }},
+                        map: map,
+                        visible: true,  // All visible by default
+                        icon: {{
+                            path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                            scale: 6,
+                            fillColor: style.color,
+                            fillOpacity: 0.9,
+                            strokeColor: '#FFFFFF',
+                            strokeWeight: 2
+                        }},
+                        title: poi.name + ' (' + poi.type + ')'
+                    }});
+                    
+                    const infoWindow = new google.maps.InfoWindow({{
+                        content: `<div style="font-family: 'Quicksand', sans-serif; padding: 8px;">
+                            <span style="font-size: 20px;">${{style.icon}}</span>
+                            <strong style="color: ${{style.color}}">${{poi.name}}</strong><br>
+                            <span style="color: #6B7280; font-size: 12px; text-transform: capitalize;">${{poi.type ? poi.type.replace('_', ' ') : 'Location'}}</span><br>
+                            <span style="color: #10B981; font-size: 11px;">${{poi.distance_m ? (poi.distance_m / 1000).toFixed(2) + ' km away' : ''}}</span>
+                        </div>`
+                    }});
+                    marker.addListener('click', () => infoWindow.open(map, marker));
+                    
+                    poiMarkers.push(marker);
+                }}
+            }});
+
+            // Initialize POI category filter
+            initPoiCategories();
+            document.getElementById('togglePoisBtn').classList.add('active');
 
             drawElevationChart();
         }}

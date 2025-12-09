@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SADA Parking Lot | NUST Navigator</title>
+    <title>F-7 Markaz Jinnah Super | NUST Navigator</title>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
@@ -535,6 +535,211 @@
             font-size: 20px;
         }
 
+        /* POI Filter Popup */
+        .poi-filter-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(139, 69, 79, 0.3);
+            backdrop-filter: blur(4px);
+            z-index: 500;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .poi-filter-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .poi-filter-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: linear-gradient(135deg, #FFF5F7 0%, #FFFFFF 100%);
+            border-radius: 24px;
+            padding: 0;
+            width: 360px;
+            max-height: 70vh;
+            box-shadow: 0 25px 50px -12px rgba(139, 69, 79, 0.25);
+            z-index: 501;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow: hidden;
+        }
+        .poi-filter-popup.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .poi-popup-header {
+            background: linear-gradient(135deg, var(--sakura-500) 0%, var(--sakura-600) 100%);
+            padding: 20px 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        .poi-popup-header::before {
+            content: '🌸';
+            position: absolute;
+            top: -10px;
+            right: 20px;
+            font-size: 60px;
+            opacity: 0.2;
+        }
+        .poi-popup-header h3 {
+            margin: 0;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .poi-popup-header p {
+            margin: 6px 0 0 0;
+            font-size: 12px;
+            color: rgba(255,255,255,0.8);
+        }
+        .poi-popup-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .poi-popup-close:hover {
+            background: rgba(255,255,255,0.3);
+            transform: rotate(90deg);
+        }
+        
+        .poi-popup-actions {
+            display: flex;
+            gap: 8px;
+            padding: 16px 20px;
+            background: var(--sakura-50);
+            border-bottom: 1px solid var(--sakura-100);
+        }
+        .poi-action-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: 2px solid var(--sakura-300);
+            border-radius: 12px;
+            background: white;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--sakura-600);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .poi-action-btn:hover {
+            background: var(--sakura-500);
+            border-color: var(--sakura-500);
+            color: white;
+        }
+        .poi-action-btn .material-icons-round {
+            font-size: 16px;
+        }
+        
+        .poi-popup-list {
+            padding: 12px 16px;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .poi-popup-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .poi-popup-list::-webkit-scrollbar-track {
+            background: var(--sakura-50);
+            border-radius: 3px;
+        }
+        .poi-popup-list::-webkit-scrollbar-thumb {
+            background: var(--sakura-300);
+            border-radius: 3px;
+        }
+        
+        .poi-category-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            margin-bottom: 6px;
+            background: white;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        .poi-category-item:hover {
+            background: var(--sakura-50);
+            transform: translateX(4px);
+        }
+        .poi-category-item.selected {
+            border-color: var(--sakura-400);
+            background: linear-gradient(135deg, var(--sakura-50) 0%, white 100%);
+        }
+        
+        .poi-category-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .poi-category-info {
+            flex: 1;
+        }
+        .poi-category-name {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--brown-900);
+            text-transform: capitalize;
+        }
+        .poi-category-count {
+            font-size: 11px;
+            color: var(--brown-800);
+            opacity: 0.6;
+        }
+        .poi-category-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            border: 2px solid var(--sakura-300);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .poi-category-item.selected .poi-category-check {
+            background: var(--sakura-500);
+            border-color: var(--sakura-500);
+            color: white;
+        }
+
         /* Route info badge */
         .route-badge {
             position: fixed;
@@ -589,7 +794,7 @@
                 <div class="route-line"></div>
                 <div class="location-badge">
                     <div class="location-dot end">B</div>
-                    <div class="location-name" title="SADA Parking Lot">SADA Parking Lo...</div>
+                    <div class="location-name" title="F-7 Markaz Jinnah Super">F-7 Markaz Jinn...</div>
                 </div>
             </div>
 
@@ -600,15 +805,15 @@
 
             <div class="quick-stats">
                 <div class="quick-stat">
-                    <div class="quick-stat-value">4.9</div>
+                    <div class="quick-stat-value">20.4</div>
                     <div class="quick-stat-label">minutes</div>
                 </div>
                 <div class="quick-stat">
-                    <div class="quick-stat-value">3.22</div>
+                    <div class="quick-stat-value">15.87</div>
                     <div class="quick-stat-label">km</div>
                 </div>
                 <div class="quick-stat">
-                    <div class="quick-stat-value">+28</div>
+                    <div class="quick-stat-value">+115</div>
                     <div class="quick-stat-label">m climb</div>
                 </div>
             </div>
@@ -618,7 +823,7 @@
                 <span class="material-icons-round">map</span>
             </button>
 
-            <div class="generated-time">December 09, 2025 • 08:37 PM</div>
+            <div class="generated-time">December 10, 2025 • 12:06 AM</div>
         </div>
     </div>
 
@@ -626,13 +831,38 @@
     <div class="map-view" id="mapView">
         <div id="map"></div>
         
+        <!-- POI Filter Popup -->
+        <div class="poi-filter-overlay" id="poiFilterOverlay" onclick="closePoiFilter()"></div>
+        <div class="poi-filter-popup" id="poiFilterPopup">
+            <div class="poi-popup-header">
+                <button class="poi-popup-close" onclick="closePoiFilter()">
+                    <span class="material-icons-round">close</span>
+                </button>
+                <h3><span class="material-icons-round">filter_list</span> Filter POIs</h3>
+                <p>Select which points of interest to display</p>
+            </div>
+            <div class="poi-popup-actions">
+                <button class="poi-action-btn" onclick="selectAllPois()">
+                    <span class="material-icons-round">done_all</span>
+                    Select All
+                </button>
+                <button class="poi-action-btn" onclick="selectNonePois()">
+                    <span class="material-icons-round">remove_done</span>
+                    Clear All
+                </button>
+            </div>
+            <div class="poi-popup-list" id="poiCategoryList">
+                <!-- Categories will be populated by JS -->
+            </div>
+        </div>
+        
         <!-- FIXED: Left side controls group -->
         <div class="left-controls">
             <button class="control-btn" onclick="showStart()">
                 <span class="material-icons-round">arrow_back</span>
                 Back
             </button>
-            <button class="control-btn" id="togglePoisBtn" onclick="togglePOIs()">
+            <button class="control-btn" id="togglePoisBtn" onclick="openPoiFilter()">
                 <span class="material-icons-round">place</span>
                 POIs
             </button>
@@ -657,17 +887,17 @@
         <!-- FIXED: Bottom route summary badge -->
         <div class="route-badge">
             <div class="route-badge-item">
-                <div class="route-badge-value">4.9 min</div>
+                <div class="route-badge-value">20.4 min</div>
                 <div class="route-badge-label">Duration</div>
             </div>
             <div class="route-badge-divider"></div>
             <div class="route-badge-item">
-                <div class="route-badge-value">3.22 km</div>
+                <div class="route-badge-value">15.87 km</div>
                 <div class="route-badge-label">Distance</div>
             </div>
             <div class="route-badge-divider"></div>
             <div class="route-badge-item">
-                <div class="route-badge-value">PKR 483</div>
+                <div class="route-badge-value">PKR 2381</div>
                 <div class="route-badge-label">Fuel Cost</div>
             </div>
         </div>
@@ -685,12 +915,13 @@
                 </div>
                 <div class="panel-content">
                     <div class="algo-card">
-                        <div class="algo-name">TSP (Brute Force)</div>
+                        <div class="algo-name">A* Search</div>
                         <div class="algo-stats">
-                            <div class="algo-stat"><strong>62</strong> nodes</div>
-                            <div class="algo-stat"><strong>3</strong> heap ops</div>
-                            <div class="algo-stat"><strong>0.0</strong> ms</div>
+                            <div class="algo-stat"><strong>14,727</strong> nodes</div>
+                            <div class="algo-stat"><strong>30,060</strong> heap ops</div>
+                            <div class="algo-stat"><strong>357.8</strong> ms</div>
                         </div>
+                        
                     </div>
                 </div>
             </div>
@@ -707,11 +938,11 @@
                 <div class="panel-content">
                     <div class="stats-grid">
                         <div class="stat-item">
-                            <div class="stat-value" style="color:#10B981">+28</div>
+                            <div class="stat-value" style="color:#10B981">+115</div>
                             <div class="stat-label">Climb (m)</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-value" style="color:#EF4444">-36</div>
+                            <div class="stat-value" style="color:#EF4444">-105</div>
                             <div class="stat-label">Descent (m)</div>
                         </div>
                     </div>
@@ -742,7 +973,23 @@
                     <span class="material-icons-round panel-toggle">expand_more</span>
                 </div>
                 <div class="panel-content">
-                    <div class="poi-item"><span class="poi-name" style="opacity:0.6">No POIs found nearby</span></div>
+                    
+                <div class="poi-item">
+                    <span class="poi-name">SEECS Car parking</span>
+                    <span class="poi-distance">12m</span>
+                </div>
+                <div class="poi-item">
+                    <span class="poi-name">Gate 16 NUST</span>
+                    <span class="poi-distance">65m</span>
+                </div>
+                <div class="poi-item">
+                    <span class="poi-name">SEECS PG Block</span>
+                    <span class="poi-distance">109m</span>
+                </div>
+                <div class="poi-item">
+                    <span class="poi-name">SEECS Faculty Block</span>
+                    <span class="poi-distance">111m</span>
+                </div>
                 </div>
             </div>
 
@@ -756,20 +1003,21 @@
                     <span class="material-icons-round panel-toggle">expand_more</span>
                 </div>
                 <div class="panel-content">
-                    <div class="fun-stat">🏈 Distance equals 32.2 football fields</div><div class="fun-stat">🐋 That's 107 blue whales lined up</div><div class="fun-stat">🏢 You'll climb 9 floors of elevation</div>
+                    <div class="fun-stat">🏈 Distance equals 158.7 football fields</div><div class="fun-stat">🐋 That's 529 blue whales lined up</div><div class="fun-stat">🏢 You'll climb 38 floors of elevation</div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        const routeCoords = [{"lat": 33.6431067, "lng": 72.9895427}, {"lat": 33.6430917, "lng": 72.9889288}, {"lat": 33.6429667, "lng": 72.9888751}, {"lat": 33.6425694, "lng": 72.9881898}, {"lat": 33.6425912, "lng": 72.9880928}, {"lat": 33.6426655, "lng": 72.9876819}, {"lat": 33.6426736, "lng": 72.9875385}, {"lat": 33.6426234, "lng": 72.9869202}, {"lat": 33.6421668, "lng": 72.9858172}, {"lat": 33.6421095, "lng": 72.9856983}, {"lat": 33.6420627, "lng": 72.9855863}, {"lat": 33.6418128, "lng": 72.9851156}, {"lat": 33.6414569, "lng": 72.9844262}, {"lat": 33.6413965, "lng": 72.9844723}, {"lat": 33.6412197, "lng": 72.984605}, {"lat": 33.6410946, "lng": 72.9846994}, {"lat": 33.6412197, "lng": 72.984605}, {"lat": 33.6413965, "lng": 72.9844723}, {"lat": 33.6414569, "lng": 72.9844262}, {"lat": 33.6418128, "lng": 72.9851156}, {"lat": 33.6420627, "lng": 72.9855863}, {"lat": 33.6421095, "lng": 72.9856983}, {"lat": 33.6419974, "lng": 72.9857856}, {"lat": 33.640682, "lng": 72.9867614}, {"lat": 33.6404615, "lng": 72.9869265}, {"lat": 33.6397787, "lng": 72.987438}, {"lat": 33.6396474, "lng": 72.9875343}, {"lat": 33.6395225, "lng": 72.987631}, {"lat": 33.6394706, "lng": 72.9876698}, {"lat": 33.6369739, "lng": 72.9895323}, {"lat": 33.636892, "lng": 72.9895926}, {"lat": 33.6367488, "lng": 72.9896946}, {"lat": 33.6365816, "lng": 72.9898139}, {"lat": 33.6367488, "lng": 72.9896946}, {"lat": 33.636892, "lng": 72.9895926}, {"lat": 33.6369739, "lng": 72.9895323}, {"lat": 33.6394706, "lng": 72.9876698}, {"lat": 33.6395225, "lng": 72.987631}, {"lat": 33.6396474, "lng": 72.9875343}, {"lat": 33.6397787, "lng": 72.987438}, {"lat": 33.6404615, "lng": 72.9869265}, {"lat": 33.640682, "lng": 72.9867614}, {"lat": 33.6419974, "lng": 72.9857856}, {"lat": 33.6421095, "lng": 72.9856983}, {"lat": 33.6422126, "lng": 72.9856324}, {"lat": 33.6424317, "lng": 72.9854931}, {"lat": 33.6433993, "lng": 72.9851422}, {"lat": 33.6436052, "lng": 72.9851093}, {"lat": 33.6438155, "lng": 72.9850763}, {"lat": 33.6439288, "lng": 72.9850815}, {"lat": 33.6442282, "lng": 72.9851015}, {"lat": 33.6443955, "lng": 72.9851346}, {"lat": 33.6452117, "lng": 72.985463}, {"lat": 33.6454456, "lng": 72.9852499}, {"lat": 33.6455981, "lng": 72.9852677}, {"lat": 33.6457758, "lng": 72.9857658}, {"lat": 33.6464003, "lng": 72.9863675}, {"lat": 33.6453173, "lng": 72.9891041}, {"lat": 33.6460896, "lng": 72.9895263}, {"lat": 33.646253, "lng": 72.9896217}, {"lat": 33.6462794, "lng": 72.9895546}, {"lat": 33.6464764, "lng": 72.9890724}];
-        const elevations = [561.7045288085938, 559.4234008789062, 559.2500610351562, 557.2359619140625, 556.9776000976562, 556.1927490234375, 555.7373046875, 555.1170654296875, 556.4110717773438, 556.2816162109375, 556.716064453125, 558.2738647460938, 560.3321533203125, 560.1488037109375, 558.8074340820312, 558.76953125, 558.8074340820312, 560.1488037109375, 560.3321533203125, 558.2738647460938, 556.716064453125, 556.2816162109375, 556.4722900390625, 555.0128173828125, 554.8104248046875, 551.8177490234375, 550.9314575195312, 549.8057861328125, 549.3553466796875, 554.0367431640625, 554.039306640625, 554.587890625, 554.9422607421875, 554.587890625, 554.039306640625, 554.0367431640625, 549.3553466796875, 549.8057861328125, 550.9314575195312, 551.8177490234375, 554.8104248046875, 555.0128173828125, 556.4722900390625, 556.2816162109375, 556.8306274414062, 557.63720703125, 560.0682373046875, 560.3310546875, 560.3417358398438, 560.3446044921875, 560.3262329101562, 560.1492309570312, 558.89794921875, 559.8323364257812, 559.8062744140625, 558.3455200195312, 560.1097412109375, 553.9859008789062, 552.4931030273438, 551.8704833984375, 552.150634765625, 553.1339721679688];
+        const routeCoords = [{"lat": 33.6431067, "lng": 72.9895427}, {"lat": 33.6430917, "lng": 72.9889288}, {"lat": 33.6429667, "lng": 72.9888751}, {"lat": 33.6421698, "lng": 72.9892384}, {"lat": 33.642093, "lng": 72.9894086}, {"lat": 33.6412505, "lng": 72.9919121}, {"lat": 33.6421675, "lng": 72.9938706}, {"lat": 33.6422097, "lng": 72.9938968}, {"lat": 33.6430864, "lng": 72.9941751}, {"lat": 33.6432037, "lng": 72.9941881}, {"lat": 33.6433216, "lng": 72.9942011}, {"lat": 33.6434101, "lng": 72.994208}, {"lat": 33.6435866, "lng": 72.9942073}, {"lat": 33.6438648, "lng": 72.9941905}, {"lat": 33.6439407, "lng": 72.9941764}, {"lat": 33.6441539, "lng": 72.994112}, {"lat": 33.6444322, "lng": 72.9940207}, {"lat": 33.6447025, "lng": 72.9938872}, {"lat": 33.6448095, "lng": 72.9938276}, {"lat": 33.6456944, "lng": 72.9931506}, {"lat": 33.6457448, "lng": 72.9931054}, {"lat": 33.6458017, "lng": 72.993042}, {"lat": 33.6458946, "lng": 72.9931899}, {"lat": 33.646448, "lng": 72.994232}, {"lat": 33.6468791, "lng": 72.9950857}, {"lat": 33.6470803, "lng": 72.9954716}, {"lat": 33.6479407, "lng": 72.997127}, {"lat": 33.6490275, "lng": 72.999198}, {"lat": 33.6492909, "lng": 72.9996592}, {"lat": 33.6493478, "lng": 72.9996174}, {"lat": 33.6504708, "lng": 72.9987927}, {"lat": 33.6545207, "lng": 72.9958077}, {"lat": 33.6553469, "lng": 72.996048}, {"lat": 33.6559128, "lng": 72.9956501}, {"lat": 33.6565029, "lng": 72.9944134}, {"lat": 33.6529185, "lng": 72.9876516}, {"lat": 33.6532161, "lng": 72.9875187}, {"lat": 33.6564238, "lng": 72.9937592}, {"lat": 33.6575722, "lng": 72.9959232}, {"lat": 33.6619528, "lng": 73.0041998}, {"lat": 33.6632935, "lng": 73.0067327}, {"lat": 33.6663145, "lng": 73.0125222}, {"lat": 33.6669688, "lng": 73.0138266}, {"lat": 33.6715646, "lng": 73.022442}, {"lat": 33.6736019, "lng": 73.0263734}, {"lat": 33.6792982, "lng": 73.0372533}, {"lat": 33.6795195, "lng": 73.0376864}, {"lat": 33.6796019, "lng": 73.0378466}, {"lat": 33.6798848, "lng": 73.038354}, {"lat": 33.6815036, "lng": 73.0413303}, {"lat": 33.6838119, "lng": 73.0458866}, {"lat": 33.6865736, "lng": 73.0510949}, {"lat": 33.6872083, "lng": 73.0522559}, {"lat": 33.6916954, "lng": 73.0608949}, {"lat": 33.6920362, "lng": 73.0615518}, {"lat": 33.6970364, "lng": 73.0625635}, {"lat": 33.6975832, "lng": 73.062186}, {"lat": 33.7012889, "lng": 73.0594758}, {"lat": 33.7018125, "lng": 73.0590907}, {"lat": 33.7041696, "lng": 73.0573321}, {"lat": 33.7046458, "lng": 73.0568226}, {"lat": 33.7075689, "lng": 73.0546433}, {"lat": 33.7079701, "lng": 73.0543329}, {"lat": 33.7080343, "lng": 73.0542874}, {"lat": 33.7081645, "lng": 73.0541878}, {"lat": 33.7085574, "lng": 73.053874}, {"lat": 33.7085697, "lng": 73.0538165}, {"lat": 33.7088941, "lng": 73.0535959}, {"lat": 33.7089335, "lng": 73.0536092}, {"lat": 33.7091028, "lng": 73.0540463}, {"lat": 33.7090878, "lng": 73.0540871}, {"lat": 33.7095851, "lng": 73.0550048}, {"lat": 33.7108458, "lng": 73.0575088}, {"lat": 33.7108757, "lng": 73.0575638}, {"lat": 33.71104, "lng": 73.0574346}, {"lat": 33.7110041, "lng": 73.0573656}, {"lat": 33.7120316, "lng": 73.0566057}, {"lat": 33.7117836, "lng": 73.0561283}, {"lat": 33.7117332, "lng": 73.0560314}, {"lat": 33.7118586, "lng": 73.0559181}, {"lat": 33.7126727, "lng": 73.0575131}, {"lat": 33.7136316, "lng": 73.0567734}, {"lat": 33.713716, "lng": 73.0569172}, {"lat": 33.7139618, "lng": 73.0573361}, {"lat": 33.714609, "lng": 73.0568314}, {"lat": 33.7152479, "lng": 73.0563613}, {"lat": 33.7153857, "lng": 73.0562482}, {"lat": 33.7156351, "lng": 73.0560736}, {"lat": 33.715831, "lng": 73.055928}, {"lat": 33.7162735, "lng": 73.0555736}, {"lat": 33.7163051, "lng": 73.0555513}, {"lat": 33.7168898, "lng": 73.055111}, {"lat": 33.7174637, "lng": 73.0546862}, {"lat": 33.7181746, "lng": 73.0541522}, {"lat": 33.7182808, "lng": 73.0540773}, {"lat": 33.7185947, "lng": 73.0546914}, {"lat": 33.7187662, "lng": 73.0550198}, {"lat": 33.7192345, "lng": 73.0559209}, {"lat": 33.7194755, "lng": 73.0563846}, {"lat": 33.7201286, "lng": 73.0559251}, {"lat": 33.7202108, "lng": 73.0560817}, {"lat": 33.7210078, "lng": 73.0556984}];
+        const elevations = [561.7045288085938, 559.4234008789062, 559.2500610351562, 553.9098510742188, 553.569580078125, 552.3377075195312, 561.6681518554688, 561.7997436523438, 558.65625, 557.753662109375, 557.128662109375, 556.6126098632812, 555.4945678710938, 554.0486450195312, 553.5645751953125, 552.3367919921875, 550.9266967773438, 549.2485961914062, 548.919189453125, 545.5015869140625, 545.0864868164062, 544.7540893554688, 544.8960571289062, 545.9144287109375, 547.1056518554688, 548.4024047851562, 558.4107055664062, 554.4296875, 551.123291015625, 551.2296752929688, 548.6412353515625, 554.9744873046875, 558.95947265625, 561.0821533203125, 564.3412475585938, 567.2586669921875, 568.0455322265625, 565.0350341796875, 564.45654296875, 540.8402709960938, 533.7044067382812, 535.7686157226562, 535.7976684570312, 525.5890502929688, 525.280517578125, 530.97314453125, 531.266357421875, 531.271728515625, 531.522216796875, 529.0924072265625, 526.8665771484375, 522.73681640625, 522.3287963867188, 535.6159057617188, 536.5203857421875, 541.9652709960938, 543.6967163085938, 548.0548706054688, 548.3193359375, 548.8426513671875, 549.1550903320312, 557.0540161132812, 557.3787841796875, 558.3447265625, 557.9330444335938, 560.0772705078125, 560.5950927734375, 560.5262451171875, 559.9440307617188, 559.7675170898438, 559.6716918945312, 562.3778076171875, 560.06005859375, 560.0504150390625, 561.5811767578125, 561.852294921875, 560.7525024414062, 562.0947265625, 562.3690795898438, 562.4087524414062, 557.1362915039062, 561.2548217773438, 559.9456176757812, 560.9555053710938, 563.5729370117188, 565.771728515625, 566.0455322265625, 566.4142456054688, 566.643310546875, 566.59228515625, 566.6056518554688, 566.6971435546875, 568.516845703125, 571.4860229492188, 571.3914184570312, 571.36865234375, 571.4010009765625, 569.1078491210938, 568.2560424804688, 569.8536987304688, 569.6791381835938, 571.9043579101562];
         const startCoord = {"lat": 33.6431067, "lng": 72.9895427};
-        const endCoord = {"lat": 33.6464764, "lng": 72.9890724};
+        const endCoord = {"lat": 33.7210078, "lng": 73.0556984};
         const alternativeRoutes = [];
-        const multiStopSegments = [[{"lat": 33.6431067, "lng": 72.9895427}, {"lat": 33.6430917, "lng": 72.9889288}, {"lat": 33.6429667, "lng": 72.9888751}, {"lat": 33.6425694, "lng": 72.9881898}, {"lat": 33.6425912, "lng": 72.9880928}, {"lat": 33.6426655, "lng": 72.9876819}, {"lat": 33.6426736, "lng": 72.9875385}, {"lat": 33.6426234, "lng": 72.9869202}, {"lat": 33.6421668, "lng": 72.9858172}, {"lat": 33.6421095, "lng": 72.9856983}, {"lat": 33.6420627, "lng": 72.9855863}, {"lat": 33.6418128, "lng": 72.9851156}, {"lat": 33.6414569, "lng": 72.9844262}, {"lat": 33.6413965, "lng": 72.9844723}, {"lat": 33.6412197, "lng": 72.984605}, {"lat": 33.6410946, "lng": 72.9846994}], [{"lat": 33.6410946, "lng": 72.9846994}, {"lat": 33.6412197, "lng": 72.984605}, {"lat": 33.6413965, "lng": 72.9844723}, {"lat": 33.6414569, "lng": 72.9844262}, {"lat": 33.6418128, "lng": 72.9851156}, {"lat": 33.6420627, "lng": 72.9855863}, {"lat": 33.6421095, "lng": 72.9856983}, {"lat": 33.6419974, "lng": 72.9857856}, {"lat": 33.640682, "lng": 72.9867614}, {"lat": 33.6404615, "lng": 72.9869265}, {"lat": 33.6397787, "lng": 72.987438}, {"lat": 33.6396474, "lng": 72.9875343}, {"lat": 33.6395225, "lng": 72.987631}, {"lat": 33.6394706, "lng": 72.9876698}, {"lat": 33.6369739, "lng": 72.9895323}, {"lat": 33.636892, "lng": 72.9895926}, {"lat": 33.6367488, "lng": 72.9896946}, {"lat": 33.6365816, "lng": 72.9898139}], [{"lat": 33.6365816, "lng": 72.9898139}, {"lat": 33.6367488, "lng": 72.9896946}, {"lat": 33.636892, "lng": 72.9895926}, {"lat": 33.6369739, "lng": 72.9895323}, {"lat": 33.6394706, "lng": 72.9876698}, {"lat": 33.6395225, "lng": 72.987631}, {"lat": 33.6396474, "lng": 72.9875343}, {"lat": 33.6397787, "lng": 72.987438}, {"lat": 33.6404615, "lng": 72.9869265}, {"lat": 33.640682, "lng": 72.9867614}, {"lat": 33.6419974, "lng": 72.9857856}, {"lat": 33.6421095, "lng": 72.9856983}, {"lat": 33.6422126, "lng": 72.9856324}, {"lat": 33.6424317, "lng": 72.9854931}, {"lat": 33.6433993, "lng": 72.9851422}, {"lat": 33.6436052, "lng": 72.9851093}, {"lat": 33.6438155, "lng": 72.9850763}, {"lat": 33.6439288, "lng": 72.9850815}, {"lat": 33.6442282, "lng": 72.9851015}, {"lat": 33.6443955, "lng": 72.9851346}, {"lat": 33.6452117, "lng": 72.985463}, {"lat": 33.6454456, "lng": 72.9852499}, {"lat": 33.6455981, "lng": 72.9852677}, {"lat": 33.6457758, "lng": 72.9857658}, {"lat": 33.6464003, "lng": 72.9863675}, {"lat": 33.6453173, "lng": 72.9891041}, {"lat": 33.6460896, "lng": 72.9895263}, {"lat": 33.646253, "lng": 72.9896217}, {"lat": 33.6462794, "lng": 72.9895546}, {"lat": 33.6464764, "lng": 72.9890724}]];
-        const waypoints = [{"label": "SEECS Car Parking", "coord": {"lat": 33.6431067, "lng": 72.9895427}, "order": 0}, {"label": "NICE Parking Area", "coord": {"lat": 33.6410946, "lng": 72.9846994}, "order": 1}, {"label": "NUST SMME Building H-12", "coord": {"lat": 33.6365816, "lng": 72.9898139}, "order": 2}, {"label": "SADA Parking Lot", "coord": {"lat": 33.6464764, "lng": 72.9890724}, "order": 3}];
+        const multiStopSegments = [];
+        const waypoints = [];
+        const poiData = [{"name": "SEECS Car parking", "lat": 33.64318700926675, "lng": 72.98962820637658, "type": "parking", "distance_m": 11.945753972858899}, {"name": "Gate 16 NUST", "lat": 33.6429645, "lng": 72.9888616, "type": "university", "distance_m": 65.27930712606168}, {"name": "SEECS PG Block", "lat": 33.64261828673654, "lng": 72.99055381927752, "type": "landmark", "distance_m": 108.54286966046922}, {"name": "SEECS Faculty Block", "lat": 33.642959721439844, "lng": 72.9907279973247, "type": "landmark", "distance_m": 111.43340711553975}, {"name": "NUST SEECS Building H-12", "lat": 33.64308708840166, "lng": 72.99079023225379, "type": "academic", "distance_m": 116.04092022526096}, {"name": "SEECS UG Block", "lat": 33.64228828000347, "lng": 72.99033868206315, "type": "landmark", "distance_m": 117.18635894806883}, {"name": "Concordia 2 Cafe", "lat": 33.6430227, "lng": 72.9882696, "type": "cafe", "distance_m": 118.76487030687025}, {"name": "NUST Concordia 2 H-12", "lat": 33.643167218190875, "lng": 72.98817887777331, "type": "hostel", "distance_m": 127.0132307047835}, {"name": "Concordia 2 (C2)", "lat": 33.64300263139076, "lng": 72.98812288693946, "type": "cafe", "distance_m": 132.54694225767864}, {"name": "C2 Parking", "lat": 33.6422775310321, "lng": 72.98807517358911, "type": "parking", "distance_m": 164.6138720572551}];
         
         // Colors for multi-stop route segments
         const segmentColors = ['#E75480', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4'];
@@ -803,6 +1051,127 @@
 
         function togglePanel(id) {
             document.getElementById(id).classList.toggle('collapsed');
+        }
+
+        // POI Filter System
+        const poiStyles = {
+            'fuel': { color: '#EF4444', icon: '⛽', bg: '#FEE2E2' },
+            'restaurant': { color: '#F97316', icon: '🍽️', bg: '#FFEDD5' },
+            'fast_food': { color: '#FBBF24', icon: '🍔', bg: '#FEF3C7' },
+            'cafe': { color: '#A16207', icon: '☕', bg: '#FEF3C7' },
+            'university': { color: '#8B5CF6', icon: '🎓', bg: '#EDE9FE' },
+            'library': { color: '#3B82F6', icon: '📚', bg: '#DBEAFE' },
+            'parking': { color: '#6B7280', icon: '🅿️', bg: '#F3F4F6' },
+            'hospital': { color: '#DC2626', icon: '🏥', bg: '#FEE2E2' },
+            'pharmacy': { color: '#10B981', icon: '💊', bg: '#D1FAE5' },
+            'bank': { color: '#059669', icon: '🏦', bg: '#D1FAE5' },
+            'atm': { color: '#14B8A6', icon: '💳', bg: '#CCFBF1' },
+            'hotel': { color: '#EC4899', icon: '🏨', bg: '#FCE7F3' },
+            'mosque': { color: '#22C55E', icon: '🕌', bg: '#DCFCE7' },
+            'police': { color: '#1E40AF', icon: '👮', bg: '#DBEAFE' },
+            'marketplace': { color: '#F59E0B', icon: '🛒', bg: '#FEF3C7' },
+            'landmark': { color: '#8B5CF6', icon: '🏛️', bg: '#EDE9FE' },
+            'default': { color: '#F59E0B', icon: '📍', bg: '#FEF3C7' }
+        };
+        
+        let selectedCategories = new Set();
+        let poiByCategory = {};
+        
+        function initPoiCategories() {
+            // Group POIs by category
+            poiByCategory = {};
+            poiData.forEach((poi, idx) => {
+                const cat = poi.type || 'default';
+                if (!poiByCategory[cat]) poiByCategory[cat] = [];
+                poiByCategory[cat].push(idx);
+            });
+            
+            // Select all categories by default
+            selectedCategories = new Set(Object.keys(poiByCategory));
+            
+            // Build category list UI
+            const listEl = document.getElementById('poiCategoryList');
+            listEl.innerHTML = '';
+            
+            Object.keys(poiByCategory).sort().forEach(cat => {
+                const style = poiStyles[cat] || poiStyles['default'];
+                const count = poiByCategory[cat].length;
+                
+                const item = document.createElement('div');
+                item.className = 'poi-category-item selected';
+                item.dataset.category = cat;
+                item.onclick = () => toggleCategory(cat);
+                
+                item.innerHTML = `
+                    <div class="poi-category-icon" style="background: ${style.bg}">
+                        ${style.icon}
+                    </div>
+                    <div class="poi-category-info">
+                        <div class="poi-category-name">${cat.replace('_', ' ')}</div>
+                        <div class="poi-category-count">${count} location${count !== 1 ? 's' : ''}</div>
+                    </div>
+                    <div class="poi-category-check">
+                        <span class="material-icons-round" style="font-size: 16px;">check</span>
+                    </div>
+                `;
+                
+                listEl.appendChild(item);
+            });
+        }
+        
+        function toggleCategory(cat) {
+            if (selectedCategories.has(cat)) {
+                selectedCategories.delete(cat);
+            } else {
+                selectedCategories.add(cat);
+            }
+            updateCategoryUI();
+            applyPoiFilter();
+        }
+        
+        function selectAllPois() {
+            selectedCategories = new Set(Object.keys(poiByCategory));
+            updateCategoryUI();
+            applyPoiFilter();
+        }
+        
+        function selectNonePois() {
+            selectedCategories.clear();
+            updateCategoryUI();
+            applyPoiFilter();
+        }
+        
+        function updateCategoryUI() {
+            document.querySelectorAll('.poi-category-item').forEach(item => {
+                const cat = item.dataset.category;
+                if (selectedCategories.has(cat)) {
+                    item.classList.add('selected');
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+            
+            // Update main button state
+            const anyVisible = selectedCategories.size > 0;
+            document.getElementById('togglePoisBtn').classList.toggle('active', anyVisible);
+        }
+        
+        function applyPoiFilter() {
+            poiMarkers.forEach((marker, idx) => {
+                const poi = poiData[idx];
+                const cat = poi.type || 'default';
+                marker.setVisible(selectedCategories.has(cat));
+            });
+        }
+        
+        function openPoiFilter() {
+            document.getElementById('poiFilterOverlay').classList.add('active');
+            document.getElementById('poiFilterPopup').classList.add('active');
+        }
+        
+        function closePoiFilter() {
+            document.getElementById('poiFilterOverlay').classList.remove('active');
+            document.getElementById('poiFilterPopup').classList.remove('active');
         }
 
         function togglePOIs() {
@@ -915,6 +1284,43 @@
             const bounds = new google.maps.LatLngBounds();
             routeCoords.forEach(c => bounds.extend(c));
             map.fitBounds(bounds, { top: 50, right: 340, bottom: 100, left: 50 });
+
+            // Create POI markers (visible by default since all categories selected)
+            poiData.forEach((poi, idx) => {
+                if (poi.lat && poi.lng) {
+                    const style = poiStyles[poi.type] || poiStyles['default'];
+                    const marker = new google.maps.Marker({
+                        position: { lat: poi.lat, lng: poi.lng },
+                        map: map,
+                        visible: true,  // All visible by default
+                        icon: {
+                            path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                            scale: 6,
+                            fillColor: style.color,
+                            fillOpacity: 0.9,
+                            strokeColor: '#FFFFFF',
+                            strokeWeight: 2
+                        },
+                        title: poi.name + ' (' + poi.type + ')'
+                    });
+                    
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `<div style="font-family: 'Quicksand', sans-serif; padding: 8px;">
+                            <span style="font-size: 20px;">${style.icon}</span>
+                            <strong style="color: ${style.color}">${poi.name}</strong><br>
+                            <span style="color: #6B7280; font-size: 12px; text-transform: capitalize;">${poi.type ? poi.type.replace('_', ' ') : 'Location'}</span><br>
+                            <span style="color: #10B981; font-size: 11px;">${poi.distance_m ? (poi.distance_m / 1000).toFixed(2) + ' km away' : ''}</span>
+                        </div>`
+                    });
+                    marker.addListener('click', () => infoWindow.open(map, marker));
+                    
+                    poiMarkers.push(marker);
+                }
+            });
+
+            // Initialize POI category filter
+            initPoiCategories();
+            document.getElementById('togglePoisBtn').classList.add('active');
 
             drawElevationChart();
         }
