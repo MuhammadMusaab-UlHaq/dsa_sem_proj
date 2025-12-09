@@ -42,11 +42,26 @@ def reconstruct_path(came_from, current):
     return total_path[::-1]
 
 # ================= A* SEARCH =================
-def a_star_search(graph, start_id, end_id, mode='car'):
+
+def a_star_search(graph, start_id, end_id, mode='car', return_stats=False):
     """
     A* pathfinding algorithm with topology awareness.
-    Returns: (path, cost) or (None, inf) if no path found.
+    Returns: (path, cost) or (path, cost, stats) if return_stats=True
     """
+    import time
+    start_time = time.time()
+    
+    # Validate inputs
+    if start_id is None or end_id is None:
+        if return_stats:
+            return None, float('inf'), {'algorithm_name': 'A*', 'nodes_explored': 0, 'heap_operations': 0, 'time_ms': 0}
+        return None, float('inf')
+    
+    if start_id not in graph.nodes or end_id not in graph.nodes:
+        if return_stats:
+            return None, float('inf'), {'algorithm_name': 'A*', 'nodes_explored': 0, 'heap_operations': 0, 'time_ms': 0}
+        return None, float('inf')
+    
     open_set = MinHeap()
     open_set.push((0, start_id))
     came_from = {}
@@ -57,11 +72,28 @@ def a_star_search(graph, start_id, end_id, mode='car'):
     f_score = {node_id: float('inf') for node_id in graph.nodes}
     f_score[start_id] = heuristic_time(graph.nodes[start_id], graph.nodes[end_id], mode)
 
+    nodes_explored = 0
+    heap_operations = 1  # Initial push
+
     while not open_set.is_empty():
         current_f, current_id = open_set.pop()
+        heap_operations += 1
+        nodes_explored += 1
         
         if current_id == end_id:
-            return reconstruct_path(came_from, current_id), g_score[end_id]
+            elapsed_ms = (time.time() - start_time) * 1000
+            path = reconstruct_path(came_from, current_id)
+            cost = g_score[end_id]
+            
+            if return_stats:
+                stats = {
+                    'algorithm_name': 'A* Search',
+                    'nodes_explored': nodes_explored,
+                    'heap_operations': heap_operations,
+                    'time_ms': elapsed_ms
+                }
+                return path, cost, stats
+            return path, cost
 
         neighbors = graph.get_neighbors(current_id)
         for neighbor_data in neighbors:
@@ -70,7 +102,6 @@ def a_star_search(graph, start_id, end_id, mode='car'):
             is_walk = neighbor_data[2]
             is_drive = neighbor_data[3]
             
-            # Skip infinity weight edges (penalized)
             if dist == float('inf'):
                 continue
 
@@ -106,27 +137,47 @@ def a_star_search(graph, start_id, end_id, mode='car'):
                 f = tentative_g + heuristic_time(graph.nodes[neighbor_id], graph.nodes[end_id], mode)
                 f_score[neighbor_id] = f
                 open_set.push((f, neighbor_id))
+                heap_operations += 1
 
+    if return_stats:
+        return None, float('inf'), {'algorithm_name': 'A*', 'nodes_explored': nodes_explored, 'heap_operations': heap_operations, 'time_ms': 0}
     return None, float('inf')
 
+
+
 # ================= BFS SEARCH (Farida) =================
-def bfs_search(graph, start, end):
+def bfs_search(graph, start, end, return_stats=False):
     """
-    Breadth-First Search to find the path with fewest intersections.
-    Ignores physical distance and edge weights.
-    Returns: (path, number_of_turns)
+    Breadth-First Search for path with fewest intersections.
     """
+    import time
+    start_time = time.time()
+    
     if start not in graph.nodes or end not in graph.nodes:
+        if return_stats:
+            return None, 0, {'algorithm_name': 'BFS', 'nodes_explored': 0, 'heap_operations': 0, 'time_ms': 0}
         return None, 0
 
     queue = deque([start])
     visited = {start: None}
+    nodes_explored = 0
 
     while queue:
         current = queue.popleft()
+        nodes_explored += 1
 
         if current == end:
             path = reconstruct_path(visited, end)
+            elapsed_ms = (time.time() - start_time) * 1000
+            
+            if return_stats:
+                stats = {
+                    'algorithm_name': 'BFS (Fewest Turns)',
+                    'nodes_explored': nodes_explored,
+                    'heap_operations': 0,  # BFS doesn't use heap
+                    'time_ms': elapsed_ms
+                }
+                return path, len(path) - 1, stats
             return path, len(path) - 1
 
         neighbors = graph.get_neighbors(current)
@@ -136,7 +187,9 @@ def bfs_search(graph, start, end):
             if neighbor_id not in visited:
                 visited[neighbor_id] = current
                 queue.append(neighbor_id)
-                
+    
+    if return_stats:
+        return None, 0, {'algorithm_name': 'BFS', 'nodes_explored': nodes_explored, 'heap_operations': 0, 'time_ms': 0}
     return None, 0
 
 # ================= K-SHORTEST PATHS (Ahmed) =================
@@ -155,29 +208,59 @@ def _modify_edge_weight(graph, u, v, new_weight):
 
 def get_k_shortest_paths(graph, start_id, end_id, k=3, mode='car'):
     """
-    Finds top k distinct routes by iteratively penalizing used edges.
+    Finds top k distinct routes using Yen's algorithm variant.
+    Uses edge penalization to encourage route diversity.
     """
     found_paths = []
     penalized_edges = []
+    seen_path_signatures = set()
 
-    for _ in range(k):
+    for iteration in range(k):
         path, cost = a_star_search(graph, start_id, end_id, mode)
         
         if not path:
             break
+        
+        # Create a signature to check for duplicate paths
+        path_sig = tuple(path[::max(1, len(path)//10)])  # Sample every ~10% of nodes
+        
+        if path_sig in seen_path_signatures:
+            # Path is too similar, try harder penalty
+            for j in range(len(path) - 1):
+                u, v = path[j], path[j+1]
+                old_w = _modify_edge_weight(graph, u, v, float('inf'))
+                if old_w is not None and old_w != float('inf'):
+                    penalized_edges.append((u, v, old_w))
+            continue
             
+        seen_path_signatures.add(path_sig)
         found_paths.append((path, cost))
         
-        # Penalize edges in this path
+        # Penalize edges in this path - use multiplier instead of inf for first pass
+        # This encourages alternatives while not completely blocking
+        penalty_multiplier = 10.0 if iteration == 0 else float('inf')
+        
         for j in range(len(path) - 1):
             u, v = path[j], path[j+1]
-            old_w = _modify_edge_weight(graph, u, v, float('inf'))
-            if old_w is not None:
-                penalized_edges.append((u, v, old_w))
-                
-                old_w_rev = _modify_edge_weight(graph, v, u, float('inf'))
-                if old_w_rev is not None:
-                    penalized_edges.append((v, u, old_w_rev))
+            current_weight = None
+            
+            # Get current weight
+            if u in graph.adj_list:
+                for data in graph.adj_list[u]:
+                    if data[0] == v:
+                        current_weight = data[1]
+                        break
+            
+            if current_weight is not None and current_weight != float('inf'):
+                new_weight = current_weight * penalty_multiplier if penalty_multiplier != float('inf') else float('inf')
+                old_w = _modify_edge_weight(graph, u, v, new_weight)
+                if old_w is not None:
+                    penalized_edges.append((u, v, old_w))
+                    
+                    # Also penalize reverse direction
+                    old_w_rev = _modify_edge_weight(graph, v, u, new_weight)
+                    if old_w_rev is not None:
+                        penalized_edges.append((v, u, old_w_rev))
 
     # Restore graph state
     for u, v, original_weight in penalized_edges:
@@ -214,16 +297,64 @@ def reset_traffic(graph, modifications):
     print("🚦 Traffic cleared.")
 
 # ================= TSP OPTIMIZATION (Usman) =================
+def _nearest_neighbor_tsp(graph, start, stops, mode):
+    """
+    Greedy Nearest Neighbor heuristic for TSP.
+    O(n²) - much faster than brute force for larger stop counts.
+    """
+    unvisited = list(stops)
+    route = []
+    current = start
+    total_cost = 0
+    segments = {}
+    
+    while unvisited:
+        best_next = None
+        best_cost = float('inf')
+        best_path = None
+        
+        for candidate in unvisited:
+            path, cost = a_star_search(graph, current, candidate, mode)
+            if path and cost < best_cost:
+                best_cost = cost
+                best_next = candidate
+                best_path = path
+        
+        if best_next is None:
+            return None, float('inf'), {}
+        
+        route.append(best_next)
+        segments[(current, best_next)] = best_path
+        total_cost += best_cost
+        current = best_next
+        unvisited.remove(best_next)
+    
+    return route, total_cost, segments
+
+
 def optimize_route_order(graph, start, list_of_stops, mode='car'):
     """
     TSP Approximation - Finds optimal visiting order for multiple stops.
-    Uses brute-force permutation for small number of stops (2-6).
+    Uses brute-force for ≤4 stops, Nearest Neighbor heuristic for more.
     
     Returns: (best_order, total_cost, segment_paths)
     """
     if not list_of_stops:
         return [], 0, {}
     
+    n_stops = len(list_of_stops)
+    
+    # Use Nearest Neighbor for larger stop counts (faster)
+    if n_stops > 4:
+        print(f"\n🔄 Using Nearest Neighbor heuristic for {n_stops} stops...")
+        order, cost, segments = _nearest_neighbor_tsp(graph, start, list_of_stops, mode)
+        if order:
+            print(f"✅ Found efficient route! Total time: {cost/60:.1f} minutes")
+        else:
+            print("❌ No valid route found for these stops")
+        return order or [], cost, segments
+    
+    # Brute force for small number of stops
     all_permutations = list(permutations(list_of_stops))
     
     best_order = None

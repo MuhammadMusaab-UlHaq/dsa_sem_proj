@@ -9,9 +9,10 @@ import time
 # Your Google Maps API Key
 GOOGLE_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY" 
 
-# NUST H-12 Coordinates
-LOCATION_POINT = (33.6415, 72.9910)
-DIST_RADIUS = 2000 
+# Islamabad Coverage - Multiple areas to cover more ground
+# Center point between NUST and major Islamabad areas
+LOCATION_POINT = (33.6800, 73.0300)  # Shifted to cover more of Islamabad
+DIST_RADIUS = 8000  # 8km radius - covers NUST, F-sectors, G-sectors, I-sectors
 
 # File Paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

@@ -1,0 +1,228 @@
+# src/nust_pois.py
+"""
+Comprehensive NUST Campus & Islamabad POI Data
+Manually curated for accurate autocomplete and navigation
+"""
+
+NUST_POIS = [
+    # ========== NUST GATES ==========
+    {"name": "NUST Gate 1 H-12", "lat": 33.649004446256264, "lon": 72.99923964348355, "type": "gate"},
+    {"name": "NUST Gate 2 H-12", "lat": 33.645840289726834, "lon": 72.98015289205203, "type": "gate"},
+    {"name": "NUST Gate 4 H-12", "lat": 33.64110085485391, "lon": 72.98369446982326, "type": "gate"},
+    {"name": "NUST Gate 10 H-12", "lat": 33.646542853179625, "lon": 73.00168242256376, "type": "gate"},
+    
+    # ========== NUST ACADEMIC BUILDINGS ==========
+    {"name": "NUST SEECS Building H-12", "lat": 33.64308708840166, "lon": 72.99079023225379, "type": "academic"},
+    {"name": "NUST SCEE Building H-12", "lat": 33.64064699448594, "lon": 72.98468897666893, "type": "academic"},
+    {"name": "NUST SMME Building H-12", "lat": 33.63652641496167, "lon": 72.9894288829535, "type": "academic"},
+    {"name": "NUST SADA Building H-12", "lat": 33.646172977165115, "lon": 72.98879853163949, "type": "academic"},
+    {"name": "NUST SNS Building H-12", "lat": 33.648626883339645, "lon": 72.9938699188781, "type": "academic"},
+    {"name": "NUST NBS Building H-12", "lat": 33.64414025164857, "lon": 72.99135058554714, "type": "academic"},
+    {"name": "NUST NICE Building H-12", "lat": 33.64079842670323, "lon": 72.9851764759037, "type": "academic"},
+    {"name": "NUST CIPS Building H-12", "lat": 33.64536718435769, "lon": 72.98724378352124, "type": "academic"},
+    {"name": "NUST NIPCONS Building H-12", "lat": 33.643351692773535, "lon": 72.99319388774182, "type": "academic"},
+    {"name": "NUST IAEC Building H-12", "lat": 33.64426489144796, "lon": 72.98767238774076, "type": "academic"},
+    {"name": "NUST CAMP Building H-12", "lat": 33.64623801831705, "lon": 72.98791231915385, "type": "academic"},
+    {"name": "NUST ASAB Building H-12", "lat": 33.646448429708784, "lon": 72.98785433085735, "type": "academic"},
+    
+    # ========== NUST HOSTELS ==========
+    {"name": "NUST Concordia 1 H-12", "lat": 33.64651419704775, "lon": 72.99027067501652, "type": "hostel"},
+    {"name": "NUST Concordia 2 H-12", "lat": 33.643167218190875, "lon": 72.98817887777331, "type": "hostel"},
+    {"name": "NUST Concordia 3 H-12", "lat": 33.642549443108145, "lon": 72.99395104292344, "type": "hostel"},
+    {"name": "NUST Concordia 4 H-12", "lat": 33.63860596941783, "lon": 72.98914225936852, "type": "hostel"},
+    {"name": "NUST Razi Hostel H-12", "lat": 33.639910560990415, "lon": 72.98699114886635, "type": "hostel"},
+    {"name": "NUST Ghazali Hostel H-12", "lat": 33.64058327117316, "lon": 72.98765588116115, "type": "hostel"},
+    {"name": "NUST Rahmat Hostel H-12", "lat": 33.64024779076336, "lon": 72.986753119953, "type": "hostel"},
+    {"name": "NUST Fatima Hostel H-12", "lat": 33.64350053874226, "lon": 72.98567184518306, "type": "hostel"},
+    {"name": "NUST Johar Hostel H-12", "lat": 33.645513147514144, "lon": 72.99231308404909, "type": "hostel"},
+    {"name": "NUST Liaquat Hostel H-12", "lat": 33.6398099160403, "lon": 72.98873744900075, "type": "hostel"},
+    {"name": "NUST Beruni Hostel H-12", "lat": 33.64064956001526, "lon": 72.98749291092886, "type": "hostel"},
+    
+    # ========== NUST FACILITIES ==========
+    {"name": "NUST Central Library H-12", "lat": 33.642130203049646, "lon": 72.99263120528552, "type": "library"},
+    {"name": "NUST Sports Complex H-12", "lat": 33.641254998940184, "lon": 72.99452086684339, "type": "sports"},
+    {"name": "NUST Medical Center H-12", "lat": 33.644295376074496, "lon": 72.99779890573205, "type": "medical"},
+    
+    # ========== NUST RESTAURANTS ==========
+    {"name": "Hot N Spicy NUST H-12", "lat": 33.64258611210596, "lon": 72.97278765146037, "type": "restaurant"},
+    
+    # ========== ISLAMABAD LANDMARKS & PARKS ==========
+    {"name": "Faisal Mosque", "lat": 33.7299, "lon": 73.0384, "type": "landmark"},
+    {"name": "Pakistan Monument", "lat": 33.6934, "lon": 73.0683, "type": "landmark"},
+    {"name": "Daman-e-Koh", "lat": 33.7384, "lon": 73.0543, "type": "landmark"},
+    {"name": "Monal Pir Sohawa", "lat": 33.7439, "lon": 73.0560, "type": "restaurant"},
+    {"name": "Rawal Lake View Park", "lat": 33.7027, "lon": 73.1261, "type": "park"},
+    {"name": "Lok Virsa Museum", "lat": 33.6946, "lon": 73.0697, "type": "landmark"},
+    {"name": "Shakarparian Park", "lat": 33.6917, "lon": 73.0725, "type": "park"},
+    {"name": "Fatima Jinnah Park F-9", "lat": 33.7073, "lon": 73.0315, "type": "park"},
+    {"name": "Rose & Jasmine Garden", "lat": 33.6985, "lon": 73.0825, "type": "park"},
+    {"name": "Islamabad Zoo", "lat": 33.7360, "lon": 73.0570, "type": "landmark"},
+    {"name": "Saidpur Village", "lat": 33.7445, "lon": 73.0680, "type": "landmark"},
+    {"name": "Trail 3 Start Margalla", "lat": 33.7342, "lon": 73.0588, "type": "landmark"},
+    {"name": "Trail 5 Start Margalla", "lat": 33.7410, "lon": 73.0790, "type": "landmark"},
+    {"name": "Shah Allah Ditta Caves", "lat": 33.7155, "lon": 72.9360, "type": "landmark"},
+    
+    # ========== ISLAMABAD COMMERCIAL AREAS ==========
+    {"name": "The Centaurus Mall", "lat": 33.7076, "lon": 73.0501, "type": "mall"},
+    {"name": "Safa Gold Mall", "lat": 33.7225, "lon": 73.0558, "type": "mall"},
+    {"name": "Giga Mall DHA", "lat": 33.5475, "lon": 73.1560, "type": "mall"},
+    {"name": "Blue Area Saudi Pak", "lat": 33.7133, "lon": 73.0619, "type": "commercial"},
+    {"name": "Zero Point Islamabad", "lat": 33.6938, "lon": 73.0652, "type": "landmark"},
+    {"name": "F-6 Markaz Super Market", "lat": 33.7303, "lon": 73.0673, "type": "commercial"},
+    {"name": "F-7 Markaz Jinnah Super", "lat": 33.7208, "lon": 73.0556, "type": "commercial"},
+    {"name": "F-8 Markaz", "lat": 33.7135, "lon": 73.0405, "type": "commercial"},
+    {"name": "F-10 Markaz", "lat": 33.6946, "lon": 73.0163, "type": "commercial"},
+    {"name": "F-11 Markaz", "lat": 33.6825, "lon": 72.9920, "type": "commercial"},
+    {"name": "G-9 Markaz Karachi Company", "lat": 33.6934, "lon": 73.0336, "type": "commercial"},
+    {"name": "G-10 Markaz", "lat": 33.6790, "lon": 73.0130, "type": "commercial"},
+    {"name": "G-11 Markaz", "lat": 33.6655, "lon": 72.9930, "type": "commercial"},
+    {"name": "G-13 Markaz", "lat": 33.6450, "lon": 72.9550, "type": "commercial"},
+    {"name": "I-8 Markaz", "lat": 33.6677, "lon": 73.0752, "type": "commercial"},
+    {"name": "I-10 Markaz", "lat": 33.6420, "lon": 73.0350, "type": "commercial"},
+    
+    # ========== UNIVERSITIES & GOVERNMENT ==========
+    {"name": "Bahria University E-8", "lat": 33.7145, "lon": 73.0280, "type": "university"},
+    {"name": "Air University E-9", "lat": 33.7175, "lon": 73.0240, "type": "university"},
+    {"name": "IIUI H-10", "lat": 33.6600, "lon": 73.0250, "type": "university"},
+    {"name": "COMSATS Park Road", "lat": 33.6515, "lon": 73.1565, "type": "university"},
+    {"name": "Quaid-e-Azam University", "lat": 33.7470, "lon": 73.1360, "type": "university"},
+    {"name": "Parliament House Islamabad", "lat": 33.7258, "lon": 73.0965, "type": "government"},
+    {"name": "Supreme Court Pakistan", "lat": 33.7275, "lon": 73.0990, "type": "government"},
+    {"name": "PIMS Hospital", "lat": 33.7040, "lon": 73.0530, "type": "hospital"},
+    {"name": "Shifa International Hospital", "lat": 33.6820, "lon": 73.0950, "type": "hospital"},
+    
+    # ========== TRANSPORT & INTERCHANGES ==========
+    {"name": "Faizabad Interchange", "lat": 33.6615, "lon": 73.0845, "type": "interchange"},
+    {"name": "Golra Mor", "lat": 33.6268, "lon": 72.9708, "type": "interchange"},
+    {"name": "Peshawar Mor Interchange", "lat": 33.6880, "lon": 73.0450, "type": "interchange"},
+    {"name": "New Islamabad Airport", "lat": 33.5612, "lon": 72.8340, "type": "airport"},
+    {"name": "Daewoo Terminal H-13", "lat": 33.6350, "lon": 72.9750, "type": "bus_terminal"},
+    {"name": "Rawalpindi Railway Station", "lat": 33.5995, "lon": 73.0545, "type": "railway"},
+    {"name": "26 Number Chungi", "lat": 33.6320, "lon": 72.9520, "type": "interchange"},
+    {"name": "Khanna Pul", "lat": 33.6285, "lon": 73.1090, "type": "interchange"},
+    {"name": "Tramri Chowk", "lat": 33.6550, "lon": 73.1380, "type": "interchange"},
+    {"name": "Rawal Chowk", "lat": 33.7070, "lon": 73.1120, "type": "interchange"},
+    
+    # ========== GAS STATIONS ==========
+    {"name": "Shell F-6 Super Market", "lat": 33.7310, "lon": 73.0680, "type": "fuel"},
+    {"name": "PSO Blue Area", "lat": 33.7140, "lon": 73.0600, "type": "fuel"},
+    {"name": "Shell F-7 Jinnah Super", "lat": 33.7220, "lon": 73.0565, "type": "fuel"},
+    {"name": "Total Parco F-10", "lat": 33.6930, "lon": 73.0150, "type": "fuel"},
+    {"name": "Attock Petroleum F-11", "lat": 33.6835, "lon": 72.9910, "type": "fuel"},
+    {"name": "PSO G-9 Kashmir Highway", "lat": 33.6850, "lon": 73.0350, "type": "fuel"},
+    {"name": "Shell G-8 Markaz", "lat": 33.7010, "lon": 73.0480, "type": "fuel"},
+    {"name": "Attock I-8 Markaz", "lat": 33.6660, "lon": 73.0740, "type": "fuel"},
+    {"name": "PSO Faizabad", "lat": 33.6620, "lon": 73.0830, "type": "fuel"},
+    {"name": "Total Zero Point", "lat": 33.6950, "lon": 73.0640, "type": "fuel"},
+    {"name": "Shell Golra Mor", "lat": 33.6280, "lon": 72.9720, "type": "fuel"},
+    {"name": "Hascol G-13", "lat": 33.6420, "lon": 72.9560, "type": "fuel"},
+    {"name": "PSO Diplomatic Enclave", "lat": 33.7260, "lon": 73.1070, "type": "fuel"},
+    {"name": "Total Parco Rawal Dam", "lat": 33.7040, "lon": 73.1180, "type": "fuel"},
+    {"name": "Shell E-11", "lat": 33.6980, "lon": 72.9850, "type": "fuel"},
+    
+    # ========== RESTAURANTS ==========
+    {"name": "Savour Foods Blue Area", "lat": 33.7144, "lon": 73.0645, "type": "restaurant"},
+    {"name": "The Monal Restaurant", "lat": 33.7439, "lon": 73.0560, "type": "restaurant"},
+    {"name": "La Montana", "lat": 33.7445, "lon": 73.0570, "type": "restaurant"},
+    {"name": "Highland Resort", "lat": 33.7850, "lon": 73.0650, "type": "restaurant"},
+    {"name": "Cheezious F-7", "lat": 33.7226, "lon": 73.0561, "type": "restaurant"},
+    {"name": "KFC F-6 Super Market", "lat": 33.7297, "lon": 73.0660, "type": "restaurant"},
+    {"name": "McDonalds F-9 Park", "lat": 33.7118, "lon": 73.0375, "type": "restaurant"},
+    {"name": "Asian Wok G-9", "lat": 33.6925, "lon": 73.0340, "type": "restaurant"},
+    {"name": "Habibi Restaurant I-8", "lat": 33.6685, "lon": 73.0765, "type": "restaurant"},
+    {"name": "Tandoori F-10", "lat": 33.6933, "lon": 73.0132, "type": "restaurant"},
+    {"name": "Street 1 Cafe F-6", "lat": 33.7275, "lon": 73.0720, "type": "cafe"},
+    {"name": "Tuscany Courtyard F-7", "lat": 33.7235, "lon": 73.0575, "type": "restaurant"},
+    {"name": "Howdy F-7", "lat": 33.7215, "lon": 73.0545, "type": "restaurant"},
+    {"name": "Ranchers I-8", "lat": 33.6670, "lon": 73.0745, "type": "restaurant"},
+    {"name": "Kabul Restaurant F-7", "lat": 33.7218, "lon": 73.0568, "type": "restaurant"},
+    {"name": "Tehzeeb Bakers Blue Area", "lat": 33.7095, "lon": 73.0585, "type": "restaurant"},
+    {"name": "Burning Brownie F-6", "lat": 33.7315, "lon": 73.0665, "type": "cafe"},
+    {"name": "Chaaye Khana F-6", "lat": 33.7305, "lon": 73.0675, "type": "cafe"},
+    {"name": "Hardees F-7", "lat": 33.7220, "lon": 73.0535, "type": "restaurant"},
+    {"name": "Subway Blue Area", "lat": 33.7130, "lon": 73.0620, "type": "restaurant"},
+    {"name": "Dominos F-10", "lat": 33.6940, "lon": 73.0160, "type": "restaurant"},
+    {"name": "Gloria Jeans F-11", "lat": 33.6820, "lon": 72.9915, "type": "cafe"},
+    {"name": "1969 Restaurant", "lat": 33.6920, "lon": 73.0850, "type": "restaurant"},
+    {"name": "Des Pardes Saidpur", "lat": 33.7450, "lon": 73.0675, "type": "restaurant"},
+    {"name": "Andaaz Restaurant Saidpur", "lat": 33.7448, "lon": 73.0678, "type": "restaurant"},
+    {"name": "Barki G-11", "lat": 33.6650, "lon": 72.9940, "type": "restaurant"},
+    {"name": "New York Pizza I-8", "lat": 33.6682, "lon": 73.0758, "type": "restaurant"},
+    {"name": "Ginyaki F-7", "lat": 33.7230, "lon": 73.0550, "type": "restaurant"},
+    {"name": "Tayto Centaurus", "lat": 33.7076, "lon": 73.0501, "type": "restaurant"},
+    {"name": "Burger Fest F-7", "lat": 33.7210, "lon": 73.0580, "type": "restaurant"},
+    
+    # ========== HOTELS ==========
+    {"name": "Islamabad Serena Hotel", "lat": 33.7236, "lon": 73.0970, "type": "hotel"},
+    {"name": "Islamabad Marriott Hotel", "lat": 33.7335, "lon": 73.0863, "type": "hotel"},
+    {"name": "The Centaurus Hotel", "lat": 33.7076, "lon": 73.0501, "type": "hotel"},
+    {"name": "Ramada by Wyndham", "lat": 33.6923, "lon": 73.1165, "type": "hotel"},
+    {"name": "Islamabad Hotel", "lat": 33.7042, "lon": 73.0805, "type": "hotel"},
+    {"name": "Best Western Premier", "lat": 33.6980, "lon": 73.1100, "type": "hotel"},
+    {"name": "Envoy Continental Hotel", "lat": 33.7115, "lon": 73.0565, "type": "hotel"},
+    {"name": "Crown Plaza Islamabad", "lat": 33.7090, "lon": 73.0575, "type": "hotel"},
+    {"name": "Hotel One Super Market", "lat": 33.7300, "lon": 73.0655, "type": "hotel"},
+    {"name": "Sheltons Rezidor", "lat": 33.6935, "lon": 73.0345, "type": "hotel"},
+    {"name": "Grace Guest House I-8", "lat": 33.6665, "lon": 73.0735, "type": "hotel"},
+    {"name": "Reina Boutique Hotel G-6", "lat": 33.7180, "lon": 73.0750, "type": "hotel"},
+    {"name": "Grand Islamabad Hotel", "lat": 33.7150, "lon": 73.0550, "type": "hotel"},
+    {"name": "Hotel Hillview F-7", "lat": 33.7212, "lon": 73.0560, "type": "hotel"},
+    {"name": "Roomy Signature F-6", "lat": 33.7320, "lon": 73.0640, "type": "hotel"},
+    {"name": "Hotel Al-Markaz G-9", "lat": 33.6930, "lon": 73.0330, "type": "hotel"},
+    {"name": "Nexus Grace F-10", "lat": 33.6950, "lon": 73.0150, "type": "hotel"},
+    {"name": "Prestige Residence F-8", "lat": 33.7120, "lon": 73.0390, "type": "hotel"},
+    {"name": "Viridi Hotel Blue Area", "lat": 33.7130, "lon": 73.0610, "type": "hotel"},
+    {"name": "Chalet Islamabad F-6", "lat": 33.7280, "lon": 73.0700, "type": "hotel"},
+    {"name": "Magnolia Guest House", "lat": 33.7250, "lon": 73.0600, "type": "hotel"},
+    {"name": "Capetown Guest House", "lat": 33.7290, "lon": 73.0630, "type": "hotel"},
+    {"name": "Savoy Inn G-7", "lat": 33.7020, "lon": 73.0650, "type": "hotel"},
+    {"name": "Harveys Guest House I-8", "lat": 33.6640, "lon": 73.0760, "type": "hotel"},
+    {"name": "Millennium Hotel F-10", "lat": 33.6960, "lon": 73.0180, "type": "hotel"},
+    {"name": "Royal Manor F-10", "lat": 33.6930, "lon": 73.0140, "type": "hotel"},
+    {"name": "Dreamland Hotel G-8", "lat": 33.7000, "lon": 73.0470, "type": "hotel"},
+    {"name": "River View Hotel", "lat": 33.6900, "lon": 73.1150, "type": "hotel"},
+    {"name": "Sina Hotel G-9", "lat": 33.6920, "lon": 73.0320, "type": "hotel"},
+    {"name": "Paramount Hotel", "lat": 33.7100, "lon": 73.0580, "type": "hotel"},
+    {"name": "Regency Hotel Islamabad", "lat": 33.7125, "lon": 73.0595, "type": "hotel"},
+    {"name": "New Cape Grace", "lat": 33.6850, "lon": 72.9900, "type": "hotel"},
+    {"name": "Liviara Guest House", "lat": 33.6800, "lon": 72.9950, "type": "hotel"},
+    {"name": "Bella Hotel F-10", "lat": 33.6955, "lon": 73.0170, "type": "hotel"},
+    {"name": "Signature Hotel E-11", "lat": 33.7010, "lon": 72.9800, "type": "hotel"},
+    {"name": "Sunset Motel Islamabad", "lat": 33.6300, "lon": 72.9700, "type": "hotel"},
+    {"name": "Tulip Guest House", "lat": 33.7200, "lon": 73.0520, "type": "hotel"},
+    {"name": "Faran Hotel G-9", "lat": 33.6940, "lon": 73.0350, "type": "hotel"},
+    {"name": "Pak Palace Hotel", "lat": 33.7050, "lon": 73.0800, "type": "hotel"},
+    {"name": "Jasmine Inn Islamabad", "lat": 33.6910, "lon": 73.0360, "type": "hotel"},
+    
+    # ========== ATMs ==========
+    {"name": "HBL ATM F-7 Markaz", "lat": 33.7215, "lon": 73.0543, "type": "atm"},
+    {"name": "MCB ATM I-8 Markaz", "lat": 33.6680, "lon": 73.0760, "type": "atm"},
+    {"name": "Meezan Bank ATM F-10", "lat": 33.6942, "lon": 73.0155, "type": "atm"},
+    {"name": "Allied Bank ATM Blue Area", "lat": 33.7088, "lon": 73.0592, "type": "atm"},
+    {"name": "Bank Alfalah ATM G-9", "lat": 33.6930, "lon": 73.0330, "type": "atm"},
+    {"name": "Standard Chartered ATM F-6", "lat": 33.7312, "lon": 73.0665, "type": "atm"},
+    {"name": "Askari Bank ATM F-11", "lat": 33.6822, "lon": 72.9918, "type": "atm"},
+    {"name": "UBL ATM G-11 Markaz", "lat": 33.6658, "lon": 72.9935, "type": "atm"},
+    {"name": "Soneri Bank ATM I-10", "lat": 33.6425, "lon": 73.0355, "type": "atm"},
+    {"name": "Faysal Bank ATM F-8", "lat": 33.7138, "lon": 73.0408, "type": "atm"},
+]
+
+
+def get_all_pois():
+    """Return all POIs."""
+    return NUST_POIS
+
+
+def get_pois_by_type(poi_type):
+    """Return POIs filtered by type."""
+    return [p for p in NUST_POIS if p['type'] == poi_type]
+
+
+def get_nust_pois():
+    """Return only NUST campus POIs."""
+    return [p for p in NUST_POIS if 'NUST' in p['name'] or 'H-12' in p['name']]
+
+
+def get_islamabad_pois():
+    """Return Islamabad city POIs (non-NUST)."""
+    return [p for p in NUST_POIS if 'NUST' not in p['name'] and 'H-12' not in p['name']]

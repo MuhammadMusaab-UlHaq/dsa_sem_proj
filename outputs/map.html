@@ -1,86 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SADA Parking Lot | NUST Navigator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
+    <style>
+        :root {
+            --sakura-50: #FFF5F7;
+            --sakura-100: #FFEEF2;
+            --sakura-200: #FFD6E0;
+            --sakura-300: #FFB7C5;
+            --sakura-400: #FF8FA3;
+            --sakura-500: #E75480;
+            --sakura-600: #C44569;
+            --brown-800: #5D3A4B;
+            --brown-900: #3D2533;
+            --cream: #FFFBFC;
+            --shadow-soft: 0 4px 20px rgba(93, 58, 75, 0.12);
+            --shadow-medium: 0 8px 30px rgba(93, 58, 75, 0.18);
+        }
 
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>NUST Intelligent Navigation</title>
-        <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places"></script>
-        <style>
-            body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; }
-            #map { height: 100%; width: 100%; }
-            #panel {
-                position: absolute; top: 20px; left: 20px; width: 320px;
-                background: white; padding: 20px; border-radius: 12px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 100;
-            }
-            h2 { margin: 0 0 10px 0; color: #004a99; font-size: 18px; }
-            .meta { font-size: 14px; color: #555; margin-bottom: 5px; }
-            .badge { 
-                display: inline-block; background: #e3f2fd; color: #0d47a1; 
-                padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;
-            }
-        </style>
-    </head>
-    <body>
-        <div id="panel">
-            <h2>NUST Navigation System</h2>
-            <div class="meta"><span class="badge">ALGORITHM</span> Custom A* Search</div>
-            <div class="meta"><span class="badge">DATA</span> Google Maps Elevation</div>
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
-            <p class="meta"><strong>Start:</strong> 33.64606, 72.98036</p>
-            <p class="meta"><strong>End:</strong> 33.64297, 72.98888</p>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans', sans-serif;
+            background: var(--sakura-50);
+            color: var(--brown-800);
+            overflow: hidden;
+        }
+
+        /* ========== CHERRY BLOSSOM PETALS ========== */
+        .petal {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: var(--sakura-300);
+            border-radius: 150% 0 150% 0;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 9999;
+            animation: fall linear infinite;
+        }
+        .petal:nth-child(odd) { background: var(--sakura-200); }
+        .petal:nth-child(3n) { background: var(--sakura-400); width: 8px; height: 8px; }
+
+        @keyframes fall {
+            0% { opacity: 0; transform: translateX(0) translateY(-10vh) rotate(0deg); }
+            10% { opacity: 0.9; }
+            90% { opacity: 0.9; }
+            100% { opacity: 0; transform: translateX(80px) translateY(105vh) rotate(540deg); }
+        }
+
+        /* ========== START PAGE ========== */
+        .start-page {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, var(--sakura-100) 0%, var(--sakura-50) 50%, var(--cream) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .start-page.hidden {
+            opacity: 0;
+            transform: scale(1.02);
+            pointer-events: none;
+        }
+
+        .start-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 44px;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: var(--shadow-medium);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .start-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--sakura-300), var(--sakura-500), var(--sakura-300));
+        }
+
+        .brand {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--sakura-500);
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            margin-bottom: 6px;
+        }
+        .start-title {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--brown-900);
+            margin-bottom: 28px;
+        }
+
+        .route-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 28px;
+            padding: 20px;
+            background: var(--sakura-50);
+            border-radius: 14px;
+        }
+        .location-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .location-dot {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .location-dot.start { background: linear-gradient(135deg, #10B981, #059669); }
+        .location-dot.end { background: linear-gradient(135deg, var(--sakura-500), var(--sakura-600)); }
+        .location-name {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--brown-800);
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .route-line {
+            flex: 1;
+            height: 3px;
+            background: linear-gradient(90deg, #10B981, var(--sakura-500));
+            border-radius: 2px;
+            position: relative;
+            max-width: 100px;
+        }
+        .route-line::after {
+            content: '';
+            position: absolute;
+            right: -5px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 5px solid transparent;
+            border-left-color: var(--sakura-500);
+        }
+
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .quick-stat {
+            padding: 14px 8px;
+            background: var(--sakura-50);
+            border-radius: 10px;
+        }
+        .quick-stat-value {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--brown-900);
+        }
+        .quick-stat-label {
+            font-size: 11px;
+            color: var(--brown-800);
+            opacity: 0.7;
+            margin-top: 2px;
+        }
+
+        .mode-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 14px;
+            background: var(--sakura-100);
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--sakura-600);
+            margin-bottom: 20px;
+        }
+        .mode-badge .material-icons-round { font-size: 16px; }
+
+        .explore-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 36px;
+            background: linear-gradient(135deg, var(--sakura-500), var(--sakura-600));
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(231, 84, 128, 0.3);
+        }
+        .explore-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(231, 84, 128, 0.4);
+        }
+        .explore-btn .material-icons-round { font-size: 18px; }
+
+        .generated-time {
+            font-size: 10px;
+            color: var(--brown-800);
+            opacity: 0.4;
+            margin-top: 20px;
+        }
+
+        /* ========== MAP VIEW ========== */
+        .map-view {
+            position: fixed;
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        .map-view.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #map { width: 100%; height: 100%; }
+
+        /* ========== FIXED: Panel Container with proper spacing ========== */
+        .panel-container {
+            position: fixed;
+            top: 24px;           /* FIXED: More top padding */
+            right: 20px;
+            bottom: 50px;        /* FIXED: Space for Google attribution */
+            width: 300px;        /* FIXED: Slightly narrower */
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 6px;
+            padding-bottom: 10px;
+            z-index: 100;
+        }
+        
+        /* FIXED: Visible scrollbar styling */
+        .panel-container::-webkit-scrollbar {
+            width: 5px;
+        }
+        .panel-container::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+        }
+        .panel-container::-webkit-scrollbar-thumb {
+            background: var(--sakura-400);
+            border-radius: 3px;
+        }
+        .panel-container::-webkit-scrollbar-thumb:hover {
+            background: var(--sakura-500);
+        }
+
+        /* Scroll fade indicator at bottom */
+        .panel-container::after {
+            content: '';
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(transparent, rgba(255,255,255,0.8));
+            pointer-events: none;
+            flex-shrink: 0;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 14px;
+            box-shadow: var(--shadow-soft);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            background: var(--sakura-50);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .panel-header:hover { background: var(--sakura-100); }
+        
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--brown-900);
+        }
+        .panel-title .material-icons-round {
+            font-size: 18px;
+            color: var(--sakura-500);
+        }
+        .panel-toggle {
+            color: var(--brown-800);
+            opacity: 0.5;
+            transition: transform 0.3s;
+            font-size: 20px;
+        }
+        .panel.collapsed .panel-toggle { transform: rotate(-90deg); }
+
+        .panel-content {
+            padding: 14px;
+            display: grid;
+            gap: 10px;
+            max-height: 300px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
+        }
+        .panel.collapsed .panel-content {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            opacity: 0;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        .stat-item {
+            padding: 10px;
+            background: var(--sakura-50);
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--brown-900);
+        }
+        .stat-label {
+            font-size: 10px;
+            color: var(--brown-800);
+            opacity: 0.7;
+            margin-top: 2px;
+        }
+
+        /* Algorithm Card */
+        .algo-card {
+            padding: 12px;
+            background: linear-gradient(135deg, var(--sakura-100), var(--sakura-50));
+            border-radius: 8px;
+            border-left: 3px solid var(--sakura-500);
+        }
+        .algo-name {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--brown-900);
+            margin-bottom: 6px;
+        }
+        .algo-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .algo-stat {
+            font-size: 11px;
+            color: var(--brown-800);
+        }
+        .algo-stat strong { color: var(--sakura-600); }
+
+        /* POI List */
+        .poi-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            background: var(--sakura-50);
+            border-radius: 6px;
+        }
+        .poi-name {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--brown-800);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 180px;
+        }
+        .poi-distance {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--sakura-600);
+            flex-shrink: 0;
+        }
+
+        /* Fun Stats */
+        .fun-stat {
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+            border-radius: 6px;
+            font-size: 12px;
+            color: #92400E;
+            border-left: 3px solid #F59E0B;
+        }
+
+        /* FIXED: Elevation Chart with proper padding */
+        .elevation-chart {
+            height: 70px;
+            background: var(--sakura-50);
+            border-radius: 8px;
+            padding: 12px 10px 8px 10px;  /* FIXED: More padding */
+            position: relative;
+        }
+        .elevation-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+        .elevation-path {
+            fill: none;
+            stroke: var(--sakura-500);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .elevation-fill {
+            fill: url(#elevationGradient);
+            opacity: 0.4;
+        }
+        .elevation-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: var(--brown-800);
+            opacity: 0.5;
+            margin-top: 4px;
+        }
+
+        /* FIXED: Control buttons group on left side */
+        .left-controls {
+            position: fixed;
+            top: 24px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .control-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: white;
+            border: none;
+            border-radius: 50px;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--brown-800);
+            cursor: pointer;
+            box-shadow: var(--shadow-soft);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .control-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-medium);
+        }
+        .control-btn .material-icons-round { font-size: 18px; }
+        
+        .control-btn.active {
+            background: var(--sakura-500);
+            color: white;
+        }
+
+        /* Map Type Selector Group */
+        .map-type-group {
+            display: flex;
+            background: white;
+            border-radius: 12px;
+            padding: 4px;
+            box-shadow: var(--shadow-soft);
+            gap: 2px;
+        }
+        .map-type-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--brown-800);
+            transition: all 0.2s;
+        }
+        .map-type-btn:hover {
+            background: var(--sakura-100);
+        }
+        .map-type-btn.active {
+            background: var(--sakura-500);
+            color: white;
+        }
+        .map-type-btn .material-icons-round {
+            font-size: 20px;
+        }
+
+        /* Route info badge */
+        .route-badge {
+            position: fixed;
+            bottom: 30px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 20px;
+            background: white;
+            border-radius: 50px;
+            box-shadow: var(--shadow-medium);
+            z-index: 100;
+        }
+        .route-badge-item {
+            text-align: center;
+        }
+        .route-badge-value {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--brown-900);
+        }
+        .route-badge-label {
+            font-size: 9px;
+            color: var(--brown-800);
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .route-badge-divider {
+            width: 1px;
+            height: 30px;
+            background: var(--sakura-200);
+        }
+    </style>
+</head>
+<body>
+    <div class="petals-container" id="petals"></div>
+
+    <!-- Start Page -->
+    <div class="start-page" id="startPage">
+        <div class="start-card">
+            <div class="brand">NUST Navigator</div>
+            <h1 class="start-title">Your Route is Ready</h1>
+            
+            <div class="route-visual">
+                <div class="location-badge">
+                    <div class="location-dot start">A</div>
+                    <div class="location-name" title="SEECS Car Parking">SEECS Car Parki...</div>
+                </div>
+                <div class="route-line"></div>
+                <div class="location-badge">
+                    <div class="location-dot end">B</div>
+                    <div class="location-name" title="SADA Parking Lot">SADA Parking Lo...</div>
+                </div>
+            </div>
+
+            <div class="mode-badge">
+                <span class="material-icons-round">directions_car</span>
+                Driving
+            </div>
+
+            <div class="quick-stats">
+                <div class="quick-stat">
+                    <div class="quick-stat-value">4.9</div>
+                    <div class="quick-stat-label">minutes</div>
+                </div>
+                <div class="quick-stat">
+                    <div class="quick-stat-value">3.22</div>
+                    <div class="quick-stat-label">km</div>
+                </div>
+                <div class="quick-stat">
+                    <div class="quick-stat-value">+28</div>
+                    <div class="quick-stat-label">m climb</div>
+                </div>
+            </div>
+
+            <button class="explore-btn" onclick="showMap()">
+                View on Map
+                <span class="material-icons-round">map</span>
+            </button>
+
+            <div class="generated-time">December 09, 2025 • 08:37 PM</div>
         </div>
+    </div>
+
+    <!-- Map View -->
+    <div class="map-view" id="mapView">
         <div id="map"></div>
+        
+        <!-- FIXED: Left side controls group -->
+        <div class="left-controls">
+            <button class="control-btn" onclick="showStart()">
+                <span class="material-icons-round">arrow_back</span>
+                Back
+            </button>
+            <button class="control-btn" id="togglePoisBtn" onclick="togglePOIs()">
+                <span class="material-icons-round">place</span>
+                POIs
+            </button>
+            
+            <!-- Map Type Selector -->
+            <div class="map-type-group">
+                <button class="map-type-btn active" id="mapTypeRoadmap" onclick="setMapType('roadmap')">
+                    <span class="material-icons-round">map</span>
+                </button>
+                <button class="map-type-btn" id="mapTypeSatellite" onclick="setMapType('satellite')">
+                    <span class="material-icons-round">satellite_alt</span>
+                </button>
+                <button class="map-type-btn" id="mapTypeTerrain" onclick="setMapType('terrain')">
+                    <span class="material-icons-round">terrain</span>
+                </button>
+                <button class="map-type-btn" id="mapTypeHybrid" onclick="setMapType('hybrid')">
+                    <span class="material-icons-round">layers</span>
+                </button>
+            </div>
+        </div>
 
-        <script>
-            function initMap() {
-                const map = new google.maps.Map(document.getElementById("map"), {
-                    zoom: 16,
-                    center: { lat: 33.6415, lng: 72.9910 }, // NUST Center
-                    mapTypeId: "roadmap",
-                    styles: [
-                        { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }
-                    ]
-                });
+        <!-- FIXED: Bottom route summary badge -->
+        <div class="route-badge">
+            <div class="route-badge-item">
+                <div class="route-badge-value">4.9 min</div>
+                <div class="route-badge-label">Duration</div>
+            </div>
+            <div class="route-badge-divider"></div>
+            <div class="route-badge-item">
+                <div class="route-badge-value">3.22 km</div>
+                <div class="route-badge-label">Distance</div>
+            </div>
+            <div class="route-badge-divider"></div>
+            <div class="route-badge-item">
+                <div class="route-badge-value">PKR 483</div>
+                <div class="route-badge-label">Fuel Cost</div>
+            </div>
+        </div>
 
-                // The Path calculated by Python
-                const routePath = [
-                    { lat: 33.6460558, lng: 72.9803568 },{ lat: 33.6461336, lng: 72.9805488 },{ lat: 33.6461041, lng: 72.9819967 },{ lat: 33.6460024, lng: 72.9826545 },{ lat: 33.6456134, lng: 72.9851646 },{ lat: 33.6454943, lng: 72.9851386 },{ lat: 33.645445, lng: 72.9851172 },{ lat: 33.644762, lng: 72.9851693 },{ lat: 33.6443442, lng: 72.9850474 },{ lat: 33.644235, lng: 72.985034 },{ lat: 33.6439376, lng: 72.9850137 },{ lat: 33.6439288, lng: 72.9850815 },{ lat: 33.6438155, lng: 72.9850763 },{ lat: 33.6436052, lng: 72.9851093 },{ lat: 33.6436234, lng: 72.9851779 },{ lat: 33.6437592, lng: 72.9859024 },{ lat: 33.6437789, lng: 72.9863522 },{ lat: 33.6438474, lng: 72.9866337 },{ lat: 33.6436269, lng: 72.9871758 },{ lat: 33.6435354, lng: 72.9871905 },{ lat: 33.6435149, lng: 72.9873318 },{ lat: 33.6433736, lng: 72.987492 },{ lat: 33.6431793, lng: 72.9877056 },{ lat: 33.6431219, lng: 72.9878628 },{ lat: 33.6431281, lng: 72.9878906 },{ lat: 33.643001, lng: 72.987867 },{ lat: 33.6427724, lng: 72.9880463 },{ lat: 33.6427635, lng: 72.9881053 },{ lat: 33.6429466, lng: 72.988395 },{ lat: 33.6430046, lng: 72.9884271 },{ lat: 33.6430917, lng: 72.9889288 },{ lat: 33.6429667, lng: 72.9888751 }
-                ];
+        <!-- FIXED: Right panels with proper constraints -->
+        <div class="panel-container">
+            <!-- Algorithm Panel (most impressive, show first) -->
+            <div class="panel" id="panelAlgo">
+                <div class="panel-header" onclick="togglePanel('panelAlgo')">
+                    <div class="panel-title">
+                        <span class="material-icons-round">memory</span>
+                        Algorithm
+                    </div>
+                    <span class="material-icons-round panel-toggle">expand_more</span>
+                </div>
+                <div class="panel-content">
+                    <div class="algo-card">
+                        <div class="algo-name">TSP (Brute Force)</div>
+                        <div class="algo-stats">
+                            <div class="algo-stat"><strong>62</strong> nodes</div>
+                            <div class="algo-stat"><strong>3</strong> heap ops</div>
+                            <div class="algo-stat"><strong>0.0</strong> ms</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                // Draw the Polyline
-                const flightPath = new google.maps.Polyline({
-                    path: routePath,
-                    geodesic: true,
-                    strokeColor: "#2979FF",
-                    strokeOpacity: 1.0,
-                    strokeWeight: 5
-                });
-                flightPath.setMap(map);
+            <!-- Elevation Panel -->
+            <div class="panel" id="panelElevation">
+                <div class="panel-header" onclick="togglePanel('panelElevation')">
+                    <div class="panel-title">
+                        <span class="material-icons-round">terrain</span>
+                        Elevation
+                    </div>
+                    <span class="material-icons-round panel-toggle">expand_more</span>
+                </div>
+                <div class="panel-content">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value" style="color:#10B981">+28</div>
+                            <div class="stat-label">Climb (m)</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" style="color:#EF4444">-36</div>
+                            <div class="stat-label">Descent (m)</div>
+                        </div>
+                    </div>
+                    <div class="elevation-chart">
+                        <svg class="elevation-svg" id="elevationSvg" viewBox="0 0 280 45" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="elevationGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#E75480;stop-opacity:0.4" />
+                                    <stop offset="100%" style="stop-color:#E75480;stop-opacity:0" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <div class="elevation-labels">
+                        <span>Start</span>
+                        <span>End</span>
+                    </div>
+                </div>
+            </div>
 
-                // Start Marker
-                new google.maps.Marker({
-                    position: routePath[0],
-                    map: map,
-                    label: "A",
-                    title: "Start Point"
-                });
+            <!-- POIs Panel -->
+            <div class="panel" id="panelPois">
+                <div class="panel-header" onclick="togglePanel('panelPois')">
+                    <div class="panel-title">
+                        <span class="material-icons-round">near_me</span>
+                        Nearby
+                    </div>
+                    <span class="material-icons-round panel-toggle">expand_more</span>
+                </div>
+                <div class="panel-content">
+                    <div class="poi-item"><span class="poi-name" style="opacity:0.6">No POIs found nearby</span></div>
+                </div>
+            </div>
 
-                // End Marker
-                new google.maps.Marker({
-                    position: routePath[routePath.length - 1],
-                    map: map,
-                    label: "B",
-                    title: "Destination"
+            <!-- Fun Stats Panel -->
+            <div class="panel" id="panelFun">
+                <div class="panel-header" onclick="togglePanel('panelFun')">
+                    <div class="panel-title">
+                        <span class="material-icons-round">emoji_events</span>
+                        Fun Facts
+                    </div>
+                    <span class="material-icons-round panel-toggle">expand_more</span>
+                </div>
+                <div class="panel-content">
+                    <div class="fun-stat">🏈 Distance equals 32.2 football fields</div><div class="fun-stat">🐋 That's 107 blue whales lined up</div><div class="fun-stat">🏢 You'll climb 9 floors of elevation</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const routeCoords = [{"lat": 33.6431067, "lng": 72.9895427}, {"lat": 33.6430917, "lng": 72.9889288}, {"lat": 33.6429667, "lng": 72.9888751}, {"lat": 33.6425694, "lng": 72.9881898}, {"lat": 33.6425912, "lng": 72.9880928}, {"lat": 33.6426655, "lng": 72.9876819}, {"lat": 33.6426736, "lng": 72.9875385}, {"lat": 33.6426234, "lng": 72.9869202}, {"lat": 33.6421668, "lng": 72.9858172}, {"lat": 33.6421095, "lng": 72.9856983}, {"lat": 33.6420627, "lng": 72.9855863}, {"lat": 33.6418128, "lng": 72.9851156}, {"lat": 33.6414569, "lng": 72.9844262}, {"lat": 33.6413965, "lng": 72.9844723}, {"lat": 33.6412197, "lng": 72.984605}, {"lat": 33.6410946, "lng": 72.9846994}, {"lat": 33.6412197, "lng": 72.984605}, {"lat": 33.6413965, "lng": 72.9844723}, {"lat": 33.6414569, "lng": 72.9844262}, {"lat": 33.6418128, "lng": 72.9851156}, {"lat": 33.6420627, "lng": 72.9855863}, {"lat": 33.6421095, "lng": 72.9856983}, {"lat": 33.6419974, "lng": 72.9857856}, {"lat": 33.640682, "lng": 72.9867614}, {"lat": 33.6404615, "lng": 72.9869265}, {"lat": 33.6397787, "lng": 72.987438}, {"lat": 33.6396474, "lng": 72.9875343}, {"lat": 33.6395225, "lng": 72.987631}, {"lat": 33.6394706, "lng": 72.9876698}, {"lat": 33.6369739, "lng": 72.9895323}, {"lat": 33.636892, "lng": 72.9895926}, {"lat": 33.6367488, "lng": 72.9896946}, {"lat": 33.6365816, "lng": 72.9898139}, {"lat": 33.6367488, "lng": 72.9896946}, {"lat": 33.636892, "lng": 72.9895926}, {"lat": 33.6369739, "lng": 72.9895323}, {"lat": 33.6394706, "lng": 72.9876698}, {"lat": 33.6395225, "lng": 72.987631}, {"lat": 33.6396474, "lng": 72.9875343}, {"lat": 33.6397787, "lng": 72.987438}, {"lat": 33.6404615, "lng": 72.9869265}, {"lat": 33.640682, "lng": 72.9867614}, {"lat": 33.6419974, "lng": 72.9857856}, {"lat": 33.6421095, "lng": 72.9856983}, {"lat": 33.6422126, "lng": 72.9856324}, {"lat": 33.6424317, "lng": 72.9854931}, {"lat": 33.6433993, "lng": 72.9851422}, {"lat": 33.6436052, "lng": 72.9851093}, {"lat": 33.6438155, "lng": 72.9850763}, {"lat": 33.6439288, "lng": 72.9850815}, {"lat": 33.6442282, "lng": 72.9851015}, {"lat": 33.6443955, "lng": 72.9851346}, {"lat": 33.6452117, "lng": 72.985463}, {"lat": 33.6454456, "lng": 72.9852499}, {"lat": 33.6455981, "lng": 72.9852677}, {"lat": 33.6457758, "lng": 72.9857658}, {"lat": 33.6464003, "lng": 72.9863675}, {"lat": 33.6453173, "lng": 72.9891041}, {"lat": 33.6460896, "lng": 72.9895263}, {"lat": 33.646253, "lng": 72.9896217}, {"lat": 33.6462794, "lng": 72.9895546}, {"lat": 33.6464764, "lng": 72.9890724}];
+        const elevations = [561.7045288085938, 559.4234008789062, 559.2500610351562, 557.2359619140625, 556.9776000976562, 556.1927490234375, 555.7373046875, 555.1170654296875, 556.4110717773438, 556.2816162109375, 556.716064453125, 558.2738647460938, 560.3321533203125, 560.1488037109375, 558.8074340820312, 558.76953125, 558.8074340820312, 560.1488037109375, 560.3321533203125, 558.2738647460938, 556.716064453125, 556.2816162109375, 556.4722900390625, 555.0128173828125, 554.8104248046875, 551.8177490234375, 550.9314575195312, 549.8057861328125, 549.3553466796875, 554.0367431640625, 554.039306640625, 554.587890625, 554.9422607421875, 554.587890625, 554.039306640625, 554.0367431640625, 549.3553466796875, 549.8057861328125, 550.9314575195312, 551.8177490234375, 554.8104248046875, 555.0128173828125, 556.4722900390625, 556.2816162109375, 556.8306274414062, 557.63720703125, 560.0682373046875, 560.3310546875, 560.3417358398438, 560.3446044921875, 560.3262329101562, 560.1492309570312, 558.89794921875, 559.8323364257812, 559.8062744140625, 558.3455200195312, 560.1097412109375, 553.9859008789062, 552.4931030273438, 551.8704833984375, 552.150634765625, 553.1339721679688];
+        const startCoord = {"lat": 33.6431067, "lng": 72.9895427};
+        const endCoord = {"lat": 33.6464764, "lng": 72.9890724};
+        const alternativeRoutes = [];
+        const multiStopSegments = [[{"lat": 33.6431067, "lng": 72.9895427}, {"lat": 33.6430917, "lng": 72.9889288}, {"lat": 33.6429667, "lng": 72.9888751}, {"lat": 33.6425694, "lng": 72.9881898}, {"lat": 33.6425912, "lng": 72.9880928}, {"lat": 33.6426655, "lng": 72.9876819}, {"lat": 33.6426736, "lng": 72.9875385}, {"lat": 33.6426234, "lng": 72.9869202}, {"lat": 33.6421668, "lng": 72.9858172}, {"lat": 33.6421095, "lng": 72.9856983}, {"lat": 33.6420627, "lng": 72.9855863}, {"lat": 33.6418128, "lng": 72.9851156}, {"lat": 33.6414569, "lng": 72.9844262}, {"lat": 33.6413965, "lng": 72.9844723}, {"lat": 33.6412197, "lng": 72.984605}, {"lat": 33.6410946, "lng": 72.9846994}], [{"lat": 33.6410946, "lng": 72.9846994}, {"lat": 33.6412197, "lng": 72.984605}, {"lat": 33.6413965, "lng": 72.9844723}, {"lat": 33.6414569, "lng": 72.9844262}, {"lat": 33.6418128, "lng": 72.9851156}, {"lat": 33.6420627, "lng": 72.9855863}, {"lat": 33.6421095, "lng": 72.9856983}, {"lat": 33.6419974, "lng": 72.9857856}, {"lat": 33.640682, "lng": 72.9867614}, {"lat": 33.6404615, "lng": 72.9869265}, {"lat": 33.6397787, "lng": 72.987438}, {"lat": 33.6396474, "lng": 72.9875343}, {"lat": 33.6395225, "lng": 72.987631}, {"lat": 33.6394706, "lng": 72.9876698}, {"lat": 33.6369739, "lng": 72.9895323}, {"lat": 33.636892, "lng": 72.9895926}, {"lat": 33.6367488, "lng": 72.9896946}, {"lat": 33.6365816, "lng": 72.9898139}], [{"lat": 33.6365816, "lng": 72.9898139}, {"lat": 33.6367488, "lng": 72.9896946}, {"lat": 33.636892, "lng": 72.9895926}, {"lat": 33.6369739, "lng": 72.9895323}, {"lat": 33.6394706, "lng": 72.9876698}, {"lat": 33.6395225, "lng": 72.987631}, {"lat": 33.6396474, "lng": 72.9875343}, {"lat": 33.6397787, "lng": 72.987438}, {"lat": 33.6404615, "lng": 72.9869265}, {"lat": 33.640682, "lng": 72.9867614}, {"lat": 33.6419974, "lng": 72.9857856}, {"lat": 33.6421095, "lng": 72.9856983}, {"lat": 33.6422126, "lng": 72.9856324}, {"lat": 33.6424317, "lng": 72.9854931}, {"lat": 33.6433993, "lng": 72.9851422}, {"lat": 33.6436052, "lng": 72.9851093}, {"lat": 33.6438155, "lng": 72.9850763}, {"lat": 33.6439288, "lng": 72.9850815}, {"lat": 33.6442282, "lng": 72.9851015}, {"lat": 33.6443955, "lng": 72.9851346}, {"lat": 33.6452117, "lng": 72.985463}, {"lat": 33.6454456, "lng": 72.9852499}, {"lat": 33.6455981, "lng": 72.9852677}, {"lat": 33.6457758, "lng": 72.9857658}, {"lat": 33.6464003, "lng": 72.9863675}, {"lat": 33.6453173, "lng": 72.9891041}, {"lat": 33.6460896, "lng": 72.9895263}, {"lat": 33.646253, "lng": 72.9896217}, {"lat": 33.6462794, "lng": 72.9895546}, {"lat": 33.6464764, "lng": 72.9890724}]];
+        const waypoints = [{"label": "SEECS Car Parking", "coord": {"lat": 33.6431067, "lng": 72.9895427}, "order": 0}, {"label": "NICE Parking Area", "coord": {"lat": 33.6410946, "lng": 72.9846994}, "order": 1}, {"label": "NUST SMME Building H-12", "coord": {"lat": 33.6365816, "lng": 72.9898139}, "order": 2}, {"label": "SADA Parking Lot", "coord": {"lat": 33.6464764, "lng": 72.9890724}, "order": 3}];
+        
+        // Colors for multi-stop route segments
+        const segmentColors = ['#E75480', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4'];
+
+        let map, routePolyline, altPolylines = [], poiMarkers = [], segmentPolylines = [], waypointMarkers = [];
+        let poisVisible = false;
+
+        function createPetals() {
+            const container = document.getElementById('petals');
+            for (let i = 0; i < 25; i++) {
+                const petal = document.createElement('div');
+                petal.className = 'petal';
+                petal.style.left = Math.random() * 100 + 'vw';
+                petal.style.animationDuration = (Math.random() * 6 + 10) + 's';
+                petal.style.animationDelay = (Math.random() * 15) + 's';
+                container.appendChild(petal);
+            }
+        }
+        createPetals();
+
+        function showMap() {
+            document.getElementById('startPage').classList.add('hidden');
+            document.getElementById('mapView').classList.add('active');
+            setTimeout(initMap, 300);
+        }
+
+        function showStart() {
+            document.getElementById('startPage').classList.remove('hidden');
+            document.getElementById('mapView').classList.remove('active');
+        }
+
+        function togglePanel(id) {
+            document.getElementById(id).classList.toggle('collapsed');
+        }
+
+        function togglePOIs() {
+            poisVisible = !poisVisible;
+            document.getElementById('togglePoisBtn').classList.toggle('active', poisVisible);
+            poiMarkers.forEach(m => m.setVisible(poisVisible));
+        }
+
+        function setMapType(type) {
+            if (!map) return;
+            
+            // Update button states
+            document.querySelectorAll('.map-type-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('mapType' + type.charAt(0).toUpperCase() + type.slice(1)).classList.add('active');
+            
+            // Set map type
+            map.setMapTypeId(google.maps.MapTypeId[type.toUpperCase()]);
+            
+            // Adjust route styling for satellite/hybrid views
+            if (type === 'satellite' || type === 'hybrid') {
+                routePolyline.setOptions({ strokeColor: '#FF69B4', strokeWeight: 6, strokeOpacity: 1.0 });
+            } else {
+                routePolyline.setOptions({ strokeColor: '#E75480', strokeWeight: 5, strokeOpacity: 1.0 });
+            }
+        }
+
+        function initMap() {
+            if (map) return;
+
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 15,
+                center: { lat: (startCoord.lat + endCoord.lat) / 2, lng: (startCoord.lng + endCoord.lng) / 2 },
+                mapTypeId: google.maps.MapTypeId.ROADMAP,
+                styles: [
+                    { featureType: "poi", stylers: [{ visibility: "simplified" }] },
+                    { featureType: "poi.business", stylers: [{ visibility: "off" }] },
+                    { featureType: "transit", stylers: [{ visibility: "simplified" }] },
+                    { featureType: "water", stylers: [{ color: "#E0F2FE" }] },
+                    { featureType: "landscape", stylers: [{ color: "#FAFAFA" }] },
+                    { featureType: "road", elementType: "geometry", stylers: [{ color: "#FFFFFF" }] },
+                    { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#E5E7EB" }] },
+                    { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#6B7280" }] },
+                    { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#FFE4E1" }] },
+                    { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#FFB6C1" }] }
+                ],
+                disableDefaultUI: false,
+                zoomControl: true,
+                zoomControlOptions: { position: google.maps.ControlPosition.LEFT_BOTTOM },
+                mapTypeControl: false,
+                streetViewControl: true,
+                streetViewControlOptions: { position: google.maps.ControlPosition.LEFT_BOTTOM },
+                fullscreenControl: true,
+                fullscreenControlOptions: { position: google.maps.ControlPosition.TOP_LEFT },
+                scaleControl: true,
+                rotateControl: true
+            });
+
+            // Check if multi-stop route
+            if (multiStopSegments && multiStopSegments.length > 0) {
+                // Draw each segment with a different color
+                multiStopSegments.forEach((segment, idx) => {
+                    const color = segmentColors[idx % segmentColors.length];
+                    const segPoly = new google.maps.Polyline({
+                        path: segment,
+                        geodesic: true,
+                        strokeColor: color,
+                        strokeOpacity: 1.0,
+                        strokeWeight: 6,
+                        map: map
+                    });
+                    segmentPolylines.push(segPoly);
                 });
                 
-                // Auto-zoom to fit route
-                const bounds = new google.maps.LatLngBounds();
-                routePath.forEach(pt => bounds.extend(pt));
-                map.fitBounds(bounds);
+                // Draw waypoint markers with numbers
+                waypoints.forEach((wp, idx) => {
+                    const label = idx === 0 ? 'S' : idx.toString();
+                    const color = idx === 0 ? '#10B981' : segmentColors[(idx - 1) % segmentColors.length];
+                    createMarker(wp.coord, label, color, wp.label);
+                });
+            } else {
+                // Single route - draw normally
+                routePolyline = new google.maps.Polyline({
+                    path: routeCoords,
+                    geodesic: true,
+                    strokeColor: '#E75480',
+                    strokeOpacity: 1.0,
+                    strokeWeight: 5,
+                    map: map
+                });
+
+                // Alternative routes
+                alternativeRoutes.forEach((alt, idx) => {
+                    const altPoly = new google.maps.Polyline({
+                        path: alt.coords,
+                        geodesic: true,
+                        strokeColor: '#9CA3AF',
+                        strokeOpacity: 0.5,
+                        strokeWeight: 4,
+                        map: map
+                    });
+                    altPolylines.push(altPoly);
+                });
+
+                // Markers for single route
+                createMarker(startCoord, 'A', '#10B981');
+                createMarker(endCoord, 'B', '#E75480');
+            }
+
+            // Fit bounds with padding for panels
+            const bounds = new google.maps.LatLngBounds();
+            routeCoords.forEach(c => bounds.extend(c));
+            map.fitBounds(bounds, { top: 50, right: 340, bottom: 100, left: 50 });
+
+            drawElevationChart();
+        }
+
+        function createMarker(coord, label, color, title = '') {
+            const marker = new google.maps.Marker({
+                position: coord,
+                map: map,
+                label: { text: label, color: 'white', fontWeight: 'bold', fontSize: '14px' },
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 16,
+                    fillColor: color,
+                    fillOpacity: 1,
+                    strokeColor: 'white',
+                    strokeWeight: 3
+                },
+                title: title
+            });
+            
+            // Add info window for multi-stop waypoints
+            if (title) {
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `<div style="font-family: 'Quicksand', sans-serif; padding: 8px;">
+                        <strong style="color: ${color}">${label === 'S' ? 'Start' : 'Stop ' + label}</strong><br>
+                        <span>${title}</span>
+                    </div>`
+                });
+                marker.addListener('click', () => infoWindow.open(map, marker));
             }
             
-            window.onload = initMap;
-        </script>
-    </body>
-    </html>
-    
+            return marker;
+        }
+
+        function drawElevationChart() {
+            if (elevations.length < 2) return;
+
+            const svg = document.getElementById('elevationSvg');
+            const width = 280;
+            const height = 45;
+            const padTop = 5;
+            const padBottom = 5;
+
+            const minElev = Math.min(...elevations);
+            const maxElev = Math.max(...elevations);
+            const elevRange = maxElev - minElev || 1;
+
+            let pathD = 'M ';
+            let fillD = `M 0 ${height} L `;
+
+            elevations.forEach((elev, i) => {
+                const x = (i / (elevations.length - 1)) * width;
+                const y = height - padBottom - ((elev - minElev) / elevRange) * (height - padTop - padBottom);
+                pathD += `${x},${y} `;
+                fillD += `${x},${y} `;
+            });
+
+            fillD += `L ${width} ${height} Z`;
+
+            const fillEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            fillEl.setAttribute('d', fillD);
+            fillEl.setAttribute('class', 'elevation-fill');
+            svg.appendChild(fillEl);
+
+            const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            pathEl.setAttribute('d', pathD);
+            pathEl.setAttribute('class', 'elevation-path');
+            svg.appendChild(pathEl);
+        }
+    </script>
+</body>
+</html>

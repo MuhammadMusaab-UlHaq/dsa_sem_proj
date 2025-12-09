@@ -9,9 +9,10 @@ from algorithms import (
     optimize_route_order
 )
 from visualizer import generate_map
-from history_manager import log_trip, get_history
+from history_manager import log_trip, get_history, get_frequent_destinations
 import os
 import sys
+import time
 
 # --- GLOBAL VARIABLES ---
 city = None
@@ -60,58 +61,135 @@ def display_trip_stats(mode, distance_meters, time_seconds):
     print("="*30 + "\n")
 
 # --- USER SELECTION WITH TRIE AUTOCOMPLETE (Usman) ---
+def format_poi_name(name):
+    """Properly capitalize POI names for display."""
+    # Handle special cases
+    special = {
+        'nust': 'NUST', 'seecs': 'SEECS', 'scee': 'SCEE', 'smme': 'SMME',
+        'sada': 'SADA', 'sns': 'SNS', 'nbs': 'NBS', 'nice': 'NICE',
+        'cips': 'CIPS', 'rcms': 'RCMS', 'iaec': 'IAEC', 'asab': 'ASAB',
+        'hbl': 'HBL', 'atm': 'ATM', 'c1': 'C1', 'c2': 'C2', 'tic': 'TIC'
+    }
+    
+    words = name.split()
+    result = []
+    for word in words:
+        lower = word.lower().strip('()')
+        if lower in special:
+            # Preserve parentheses
+            if word.startswith('('):
+                result.append(f"({special[lower]})")
+            elif word.endswith(')'):
+                result.append(f"{special[lower]})")
+            else:
+                result.append(special[lower])
+        else:
+            result.append(word.capitalize())
+    
+    return ' '.join(result)
+
+
+def get_type_icon(poi_type):
+    """Return emoji icon for POI type."""
+    # Handle None, NaN, or non-string types
+    if poi_type is None or not isinstance(poi_type, str):
+        return '📌'
+    
+    icons = {
+        'gate': '🚪',
+        'academic': '🏛️',
+        'hostel': '🏠',
+        'cafe': '☕',
+        'restaurant': '🍽️',
+        'library': '📚',
+        'sports': '⚽',
+        'mosque': '🕌',
+        'medical': '🏥',
+        'admin': '🏢',
+        'bank': '🏦',
+        'atm': '💳',
+        'shop': '🛒',
+        'parking': '🅿️',
+        'landmark': '📍',
+        'research': '🔬',
+        'service': '🔧',
+        'university': '🎓',
+        'fuel': '⛽'
+    }
+    return icons.get(poi_type.lower(), '📌')
+
+
 def get_user_selection_with_autocomplete(graph, prompt_text):
-    """Interactive location input with Trie-based autocomplete"""
+    """Interactive location input with Trie-based autocomplete."""
     while True:
-        print(f"\n--- {prompt_text} ---")
-        query = input("Type location name (or '0' to Go Back): ").strip()
+        print(f"\n{'─' * 45}")
+        print(f"  {prompt_text}")
+        print('─' * 45)
+        query = input("  Search: ").strip()
         
         if query == '0':
             return None, None, None
         
         if not query:
-            print("❌ Empty input! Please try again.")
+            print("  ⚠️  Please enter a location name")
             continue
         
-        # Try Trie autocomplete first
+        # Try Trie autocomplete
         if hasattr(graph, 'autocomplete'):
             suggestions = graph.autocomplete(query)
             if suggestions:
-                print(f"\n📍 Found {len(suggestions)} match(es):")
+                print(f"\n  Found {len(suggestions)} match(es):\n")
                 for i, suggestion in enumerate(suggestions, 1):
                     poi = suggestion['data']
-                    print(f"  {i}. {suggestion['name']} ({poi.get('type', 'Unknown')})")
+                    name = format_poi_name(poi.get('name', suggestion['name']))
+                    icon = get_type_icon(poi.get('type'))
+                    poi_type = poi.get('type', 'location')
+                    type_label = poi_type.capitalize() if isinstance(poi_type, str) else 'Location'
+                    print(f"    {i}. {icon}  {name}")
+                    print(f"       └─ {type_label}")
                 
+                print()
                 try:
-                    choice = int(input(f"\nSelect location (1-{len(suggestions)}, 0 to search again): "))
-                    if choice == 0:
+                    choice_input = input(f"  Select (1-{len(suggestions)}) or 0 to search again: ").strip()
+                    
+                    if choice_input == '0':
                         continue
+                    
+                    choice = int(choice_input)
                     if 1 <= choice <= len(suggestions):
                         selected_poi = suggestions[choice - 1]['data']
-                        return selected_poi['lat'], selected_poi['lon'], selected_poi['name']
+                        display_name = format_poi_name(selected_poi['name'])
+                        print(f"\n  ✅ Selected: {display_name}")
+                        return selected_poi['lat'], selected_poi['lon'], display_name
                     else:
-                        print("❌ Invalid selection!")
+                        print("  ⚠️  Invalid selection, try again")
                 except ValueError:
-                    print("❌ Please enter a number!")
+                    print("  ⚠️  Please enter a number")
                 continue
         
         # Fallback to linear search
         matches = [p for p in graph.pois if query.lower() in p['name'].lower()]
         if not matches:
-            print("No matches found. Try again.")
+            print(f"  ❌ No matches for '{query}'. Try different keywords.")
+            print("     Examples: gate, seecs, concordia, library")
             continue
             
-        print(f"Found {len(matches)} matches:")
-        for i, p in enumerate(matches[:5]):
-            print(f"  {i+1}. {p['name']} ({p['type']})")
+        print(f"\n  Found {len(matches)} match(es):\n")
+        for i, p in enumerate(matches[:8], 1):
+            name = format_poi_name(p['name'])
+            icon = get_type_icon(p.get('type', 'poi'))
+            print(f"    {i}. {icon}  {name}")
             
+        print()
         try:
-            choice = int(input("Select number: "))
-            if 1 <= choice <= len(matches):
+            choice = int(input(f"  Select (1-{min(len(matches), 8)}): "))
+            if 1 <= choice <= min(len(matches), 8):
                 selected = matches[choice-1]
-                return selected['lat'], selected['lon'], selected['name']
+                display_name = format_poi_name(selected['name'])
+                print(f"\n  ✅ Selected: {display_name}")
+                return selected['lat'], selected['lon'], display_name
         except ValueError:
-            pass
+            print("  ⚠️  Please enter a number")
 
 def calculate_stats(graph, path):
     """Calculates elevation gain/loss."""
@@ -129,55 +207,107 @@ def calculate_stats(graph, path):
             total_descent += abs(diff)
     return total_climb, total_descent
 
-def display_route_results(path, mode, time_cost, start_name, end_name):
-    """Common function to display route results and generate map."""
+def collect_route_data(graph, path, mode, time_cost, start_name, end_name, algo_stats=None):
+    """Collect all data needed for visualization."""
+    
+    # Calculate distances and stats
+    real_dist = calculate_exact_distance(graph, path)
+    climb, descent = calculate_stats(graph, path)
+    
+    # Energy calculation
+    if mode == 'walk':
+        calories = (real_dist / 1000) * 50
+        fuel_cost = 0
+    else:
+        calories = 0
+        fuel_cost = (real_dist / 1000) * 150
+    
+    route_stats = {
+        'time_sec': time_cost,
+        'distance_m': real_dist,
+        'climb_m': climb,
+        'descent_m': descent,
+        'mode': mode,
+        'calories': calories,
+        'fuel_cost': fuel_cost
+    }
+    
+    # Get POIs along route
+    pois_along = []
+    start_node = graph.get_node(path[0])
+    if start_node:
+        found_pois = []
+        for i in range(0, len(path), 10):
+            n = graph.get_node(path[i])
+            if n:
+                found_pois.extend(graph.spatial.get_nearby(n['lat'], n['lon']))
+        
+        unique_pois = {p['name']: p for p in found_pois 
+                       if p['name'] not in [start_name, end_name]}.values()
+        
+        for p in unique_pois:
+            distance = get_distance_meters(start_node, {'lat': p['lat'], 'lon': p['lon']})
+            pois_along.append({
+                'name': p['name'],
+                'type': p.get('type', 'Unknown'),
+                'distance_m': distance
+            })
+        
+        # Sort using merge_sort
+        pois_along = merge_sort(pois_along, key=lambda x: x['distance_m'])
+    
+    return route_stats, pois_along[:5]
+
+def display_route_results(path, mode, time_cost, start_name, end_name, algo_stats=None, alternatives=None):
+    """Display route results and generate enhanced map."""
     if not path:
         print("Error: No path found.")
         return
     
-    # Calculate real distance (Farida's feature)
-    real_dist = calculate_exact_distance(city, path)
+    # Collect route data
+    route_stats, pois_along = collect_route_data(city, path, mode, time_cost, start_name, end_name)
     
-    # Display Fuel/Calorie Stats (Farida's feature)
+    # Display in CLI
+    real_dist = route_stats['distance_m']
     display_trip_stats(mode, real_dist, time_cost)
     
-    # Display Elevation Stats
-    climb, descent = calculate_stats(city, path)
+    climb, descent = route_stats['climb_m'], route_stats['descent_m']
     print(f" - Total Climb: {climb:.1f} m")
     print(f" - Total Descent: {descent:.1f} m")
     
-    # Log trip (Ahmed's feature)
+    # Log trip
     log_trip(start_name, end_name, mode, time_cost/60.0)
     print(">> Trip logged to history.")
     
-    # POI Logic with Merge Sort (Usman's feature)
+    # Display POIs
     print("\n[POI] Services along route (sorted by distance):")
-    found_pois = []
-    for i in range(0, len(path), 10): 
-        n = city.get_node(path[i])
-        if n:
-            found_pois.extend(city.spatial.get_nearby(n['lat'], n['lon']))
-
-    unique_pois = {p['name']: p for p in found_pois if p['name'] not in [start_name, end_name]}.values()
-    
-    if unique_pois:
-        # Calculate distance and sort using merge_sort (Usman's feature)
-        start_node = city.get_node(path[0])
-        poi_list = []
-        for p in unique_pois:
-            distance = get_distance_meters(start_node, {'lat': p['lat'], 'lon': p['lon']})
-            poi_list.append({'poi': p, 'distance': distance})
-        
-        sorted_pois = merge_sort(poi_list, key=lambda x: x['distance'])
-        
-        for item in sorted_pois[:5]:
-            p = item['poi']
-            dist_m = item['distance']
-            print(f" - {p['name']} ({dist_m:.0f}m away)")
+    if pois_along:
+        for p in pois_along:
+            print(f" - {p['name']} ({p['distance_m']:.0f}m away)")
     else:
         print(" - None found.")
     
-    generate_map(path, city.nodes)
+    # Default algorithm stats if not provided
+    if algo_stats is None:
+        algo_stats = {
+            'algorithm_name': 'A*',
+            'nodes_explored': 0,
+            'heap_operations': 0,
+            'time_ms': 0
+        }
+    
+    # Generate the enhanced map
+    generate_map(
+        path_nodes=path,
+        all_nodes=city.nodes,
+        route_stats=route_stats,
+        algorithm_stats=algo_stats,
+        pois_along_route=pois_along,
+        alternatives=alternatives,
+        start_name=start_name,
+        end_name=end_name
+    )
+
 
 # --- ROUTE SELECTION MENU ---
 def route_selection_menu():
@@ -220,26 +350,41 @@ def route_selection_menu():
     start_id = city.find_nearest_node(start_lat, start_lon, mode=mode)
     end_id = city.find_nearest_node(end_lat, end_lon, mode=mode)
     
+    # Validate that nodes were found
+    if start_id is None:
+        print(f"\n❌ Error: Could not find a {mode} route from '{start_name}'.")
+        print("   This location may be too far from the road network.")
+        input("\nPress Enter to return...")
+        return go_back()
+    
+    if end_id is None:
+        print(f"\n❌ Error: Could not find a {mode} route to '{end_name}'.")
+        print("   This location may be too far from the road network.")
+        input("\nPress Enter to return...")
+        return go_back()
+    
     path = None
     time_cost = 0
     
+    # For A* (choice == '1'):
     if choice == '1':
         print(f"[System] Calculating Fastest {mode.upper()} Route...")
-        path, time_cost = a_star_search(city, start_id, end_id, mode=mode)
-        display_route_results(path, mode, time_cost, start_name, end_name)
-        
+        path, time_cost, algo_stats = a_star_search(city, start_id, end_id, mode=mode, return_stats=True)
+        display_route_results(path, mode, time_cost, start_name, end_name, algo_stats=algo_stats)
+
+    # For BFS (choice == '2'):
     elif choice == '2':
         print("[System] Calculating Simplest Route (BFS)...")
-        path, turns = bfs_search(city, start_id, end_id)
-        if path: 
+        path, turns, algo_stats = bfs_search(city, start_id, end_id, return_stats=True)
+        if path:
             print(f"Info: Path found with {turns} intersections.")
-            time_cost = len(path) * 30  # Rough estimate
-            display_route_results(path, mode, time_cost, start_name, end_name)
+            time_cost = len(path) * 30
+            display_route_results(path, mode, time_cost, start_name, end_name, algo_stats=algo_stats)
         else:
             print("Error: No path found.")
-    
+
+    # For K-shortest (choice == '3'):
     elif choice == '3':
-        # Ahmed's K-shortest paths
         print(f"[Process] Calculating {mode.upper()} routes...")
         paths_found = get_k_shortest_paths(city, start_id, end_id, k=3, mode=mode)
 
@@ -256,7 +401,12 @@ def route_selection_menu():
             
             path = paths_found[0][0]
             time_cost = paths_found[0][1]
-            display_route_results(path, mode, time_cost, start_name, end_name)
+            
+            # Get stats for primary route
+            _, _, algo_stats = a_star_search(city, start_id, end_id, mode=mode, return_stats=True)
+            
+            display_route_results(path, mode, time_cost, start_name, end_name, 
+                                algo_stats=algo_stats, alternatives=paths_found)
     
     input("\nPress Enter to return...")
     go_back()
@@ -344,14 +494,23 @@ def multi_stop_route_menu():
     print(f"🚗 Transport Mode: {mode.upper()}")
     print(f"{'='*60}")
     
-    # Reconstruct full path for visualization
+    # Reconstruct full path for visualization AND keep segments separate
     full_path = []
+    route_segments = []  # List of segment paths for multi-colored display
+    segment_labels = [start_name]  # Labels for each waypoint
     route_nodes = [start_id] + best_order
     
     for i in range(len(route_nodes) - 1):
         segment_key = (route_nodes[i], route_nodes[i+1])
         if segment_key in segments:
             segment_path = segments[segment_key]
+            route_segments.append(segment_path)  # Store each segment
+            
+            # Get label for this stop
+            if i < len(best_order):
+                stop_name = stops_info[stop_ids.index(best_order[i])][2]
+                segment_labels.append(stop_name)
+            
             if i == 0:
                 full_path.extend(segment_path)
             else:
@@ -359,14 +518,42 @@ def multi_stop_route_menu():
     
     if full_path:
         climb, descent = calculate_stats(city, full_path)
+        total_dist = calculate_exact_distance(city, full_path)
         print(f"⛰️  Total Climb: {climb:.0f}m | Descent: {descent:.0f}m")
         
-        # Log to history
-        stops_str = " → ".join([start_name] + [stops_info[stop_ids.index(sid)][2] for sid in best_order])
+        # Log to history (use ASCII-safe arrow)
+        stops_str = " -> ".join([start_name] + [stops_info[stop_ids.index(sid)][2] for sid in best_order])
         log_trip(stops_str[:50], "Multi-Stop", mode, total_cost/60)
         print(">> Route logged to history.")
         
-        generate_map(full_path, city.nodes)
+        # Prepare stats for visualizer
+        route_stats = {
+            'time_sec': total_cost,
+            'distance_m': total_dist,
+            'climb_m': climb,
+            'descent_m': descent,
+            'mode': mode,
+            'calories': (total_dist / 1000) * 50 if mode == 'walk' else 0,
+            'fuel_cost': (total_dist / 1000) * 150 if mode == 'car' else 0
+        }
+        
+        algo_stats = {
+            'algorithm_name': 'TSP (Nearest Neighbor)' if len(stop_ids) > 4 else 'TSP (Brute Force)',
+            'nodes_explored': len(full_path),
+            'heap_operations': len(route_segments),  # Number of segments computed
+            'time_ms': 0
+        }
+        
+        generate_map(
+            path_nodes=full_path, 
+            all_nodes=city.nodes,
+            route_stats=route_stats,
+            algorithm_stats=algo_stats,
+            start_name=start_name,
+            end_name=stops_info[stop_ids.index(best_order[-1])][2],
+            multi_stop_segments=route_segments,  # Pass segments for multi-colored display
+            waypoint_labels=segment_labels  # Pass labels for markers
+        )
     
     input("\nPress Enter to return to main menu...")
     go_back()
@@ -388,27 +575,61 @@ def toggle_traffic():
 
 # --- VIEW HISTORY (Ahmed's feature) ---
 def view_history():
-    print("\n--- Search History ---")
-    history = get_history()
+    print("\n" + "="*50)
+    print("   📜 TRIP HISTORY")
+    print("="*50)
+    
+    # Show frequent destinations
+    frequent = get_frequent_destinations(3)
+    if frequent:
+        print("\n⭐ Most Visited:")
+        for dest, count in frequent:
+            print(f"   • {dest} ({count} trips)")
+    
+    # Show recent trips
+    print("\n📋 Recent Trips:")
+    print("-"*50)
+    history = get_history(10)
     for line in history:
-        print(line.strip())
+        # Format nicely
+        line = line.strip()
+        if line and not line.startswith("No") and not line.startswith("History"):
+            # Parse timestamp
+            try:
+                parts = line.split("] ")
+                timestamp = parts[0].replace("[", "")
+                route_info = parts[1] if len(parts) > 1 else line
+                print(f"  {timestamp}")
+                print(f"    → {route_info}")
+                print()
+            except:
+                print(f"  {line}")
+        else:
+            print(f"  {line}")
+    
+    print("-"*50)
     input("\nPress Enter to return...")
     main_menu()
 
 # --- MAIN MENU ---
 def main_menu():
     global rush_hour_active
-    print("\n" + "="*50)
-    print("   NUST Intelligent Navigation System")
-    print("="*50)
-    print("1. Find Route (A*/BFS)")
-    print("2. Optimize Multi-Stop Route (TSP)")
-    print(f"3. Toggle Rush Hour Mode ({'ON 🚦' if rush_hour_active else 'OFF'})")
-    print("4. View Search History")
-    print("5. Exit")
-    print("="*50)
+    print("\n")
+    print("  ╔═══════════════════════════════════════════════╗")
+    print("  ║     🌸 NUST Intelligent Navigation System     ║")
+    print("  ╠═══════════════════════════════════════════════╣")
+    print("  ║                                               ║")
+    print("  ║   1. 🗺️  Find Route (A* / BFS)                ║")
+    print("  ║   2. 📍 Multi-Stop Route (TSP)                ║")
+    traffic_status = "🔴 ON" if rush_hour_active else "⚪ OFF"
+    print(f"  ║   3. 🚦 Rush Hour Mode [{traffic_status}]              ║")
+    print("  ║   4. 📜 View Trip History                     ║")
+    print("  ║   5. 🚪 Exit                                  ║")
+    print("  ║                                               ║")
+    print("  ╚═══════════════════════════════════════════════╝")
+    print()
     
-    choice = input("Select Option: ")
+    choice = input("  Select option: ").strip()
     
     if choice == '1':
         navigate_to(route_selection_menu)
@@ -419,9 +640,10 @@ def main_menu():
     elif choice == '4':
         view_history()
     elif choice == '5':
-        print("Goodbye!")
+        print("\n  👋 Goodbye! Safe travels.\n")
         sys.exit()
     else:
+        print("  ⚠️  Invalid option")
         main_menu()
 
 # --- MAIN FUNCTION ---

@@ -12,13 +12,17 @@ class Trie:
     """Trie data structure for autocomplete suggestions."""
     def __init__(self):
         self.root = TrieNode()
+        self.all_words = []  # Store all words for fuzzy matching
     
     def insert(self, word, poi_data=None):
         """Insert a word into the Trie."""
         node = self.root
-        word = word.lower()
+        word_lower = word.lower()
         
-        for char in word:
+        # Store for fuzzy matching
+        self.all_words.append({'word': word_lower, 'data': poi_data})
+        
+        for char in word_lower:
             if char not in node.children:
                 node.children[char] = TrieNode()
             node = node.children[char]
@@ -33,12 +37,71 @@ class Trie:
         
         for char in prefix:
             if char not in node.children:
-                return []
+                # No exact prefix match - try fuzzy search
+                return self._fuzzy_search(prefix)
             node = node.children[char]
         
         suggestions = []
         self._collect_words(node, prefix, suggestions)
         return suggestions[:10]
+    
+    def _fuzzy_search(self, query, max_distance=2):
+        """
+        Fuzzy search using Levenshtein distance for typo tolerance.
+        Returns words within edit distance of query.
+        """
+        query = query.lower()
+        results = []
+        
+        for item in self.all_words:
+            word = item['word']
+            # Check if query is substring
+            if query in word:
+                results.append({'name': word, 'data': item['data'], 'score': 0})
+                continue
+            
+            # Check edit distance on the beginning of the word
+            if len(query) >= 2:
+                # Compare query against first N characters of word
+                compare_len = min(len(query) + 1, len(word))
+                word_prefix = word[:compare_len]
+                dist = self._levenshtein(query, word_prefix)
+                
+                if dist <= max_distance:
+                    results.append({'name': word, 'data': item['data'], 'score': dist})
+                    continue
+                
+                # Also check if any word in multi-word names matches
+                for sub_word in word.split():
+                    if len(sub_word) >= 2:
+                        dist = self._levenshtein(query, sub_word[:len(query)+1])
+                        if dist <= max_distance:
+                            results.append({'name': word, 'data': item['data'], 'score': dist})
+                            break
+        
+        # Sort by score (lower is better match)
+        results.sort(key=lambda x: x['score'])
+        return results[:10]
+    
+    def _levenshtein(self, s1, s2):
+        """Calculate Levenshtein edit distance between two strings."""
+        if len(s1) < len(s2):
+            return self._levenshtein(s2, s1)
+        
+        if len(s2) == 0:
+            return len(s1)
+        
+        prev_row = range(len(s2) + 1)
+        for i, c1 in enumerate(s1):
+            curr_row = [i + 1]
+            for j, c2 in enumerate(s2):
+                insertions = prev_row[j + 1] + 1
+                deletions = curr_row[j] + 1
+                substitutions = prev_row[j] + (c1 != c2)
+                curr_row.append(min(insertions, deletions, substitutions))
+            prev_row = curr_row
+        
+        return prev_row[-1]
     
     def _collect_words(self, node, current_word, suggestions):
         """Recursively collect all complete words from current node."""
@@ -204,21 +267,42 @@ class CityGraph:
                     self.walk_nodes.add(u)
                     self.walk_nodes.add(v)
         
-        # Load POIs
+        # ===== MODIFIED: Load POIs from both sources =====
+        self.pois = []
+        
+        # First, try loading custom NUST POIs
+        try:
+            from nust_pois import get_all_pois
+            custom_pois = get_all_pois()
+            self.pois.extend(custom_pois)
+            print(f"📍 Loaded {len(custom_pois)} custom NUST POIs")
+        except ImportError:
+            print("⚠️  Custom NUST POIs not found, using OSM data only")
+        
+        # Then, load from pois.json (OSM data)
         try:
             with open(pois_file, 'r', encoding='utf-8') as f:
-                self.pois = json.load(f)
+                osm_pois = json.load(f)
             
-            print(f"🔍 Loading {len(self.pois)} POIs into search index...")
-            for p in self.pois:
-                self.spatial.add_poi(p['name'], p['lat'], p['lon'], p['type'])
-                self.poi_trie.insert(p['name'], p)
+            # Merge, avoiding duplicates by name
+            existing_names = {p['name'].lower() for p in self.pois}
+            for p in osm_pois:
+                if p['name'].lower() not in existing_names:
+                    self.pois.append(p)
             
-            print(f"✅ Search index ready with {len(self.pois)} locations")
+            print(f"📍 Added {len(osm_pois)} OSM POIs (merged total: {len(self.pois)})")
         except FileNotFoundError:
             print(f"⚠️  POI file not found: {pois_file}")
         except Exception as e:
-            print(f"⚠️  Error loading POIs: {e}")
+            print(f"⚠️  Error loading OSM POIs: {e}")
+        
+        # Build spatial index and Trie
+        print(f"🔍 Building search index for {len(self.pois)} locations...")
+        for p in self.pois:
+            self.spatial.add_poi(p['name'], p['lat'], p['lon'], p['type'])
+            self.poi_trie.insert(p['name'], p)
+        
+        print(f"✅ Ready! {len(self.nodes)} nodes, {len(self.pois)} searchable locations")
 
     def get_neighbors(self, node_id):
         return self.adj_list.get(node_id, [])
@@ -238,16 +322,25 @@ class CityGraph:
         if not pool:
             pool = self.nodes.keys()
 
-        for node_id in pool:
-            if node_id not in self.nodes:
-                continue
-            data = self.nodes[node_id]
-            d_lat = data['lat'] - target_lat
-            d_lon = data['lon'] - target_lon
-            dist_sq = d_lat**2 + d_lon**2
+        # Start with tight radius, expand if needed
+        # 0.00001 ~= 1m, 0.0001 ~= 10m, 0.001 ~= 100m, 0.01 ~= 1km, 0.1 ~= 10km
+        search_radii = [0.00001, 0.0001, 0.001, 0.01, 0.1]
+        
+        for radius in search_radii:
+            candidates = []
+            for node_id in pool:
+                if node_id not in self.nodes:
+                    continue
+                data = self.nodes[node_id]
+                d_lat = data['lat'] - target_lat
+                d_lon = data['lon'] - target_lon
+                dist_sq = d_lat**2 + d_lon**2
+                
+                if dist_sq < radius:
+                    candidates.append((dist_sq, node_id))
             
-            if dist_sq < 0.00001:
-                candidates.append((dist_sq, node_id))
+            if candidates:
+                break  # Found candidates at this radius
         
         candidates.sort(key=lambda x: x[0])
         top_candidates = candidates[:5]
