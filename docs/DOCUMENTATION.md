@@ -311,18 +311,8 @@ def clear_history()
 
 ### nust_pois.py
 
-Hand-curated POI database for NUST campus and Islamabad.
+POI database for NUST campus and Islamabad.
 
-**Categories**:
-- Gates (4)
-- Academic buildings (12)
-- Hostels (11)
-- Islamabad landmarks (15)
-- Commercial areas (14)
-- Gas stations (15)
-- Restaurants (30+)
-- Hotels (40+)
-- ATMs (3)
 
 ---
 
@@ -485,12 +475,10 @@ Test route: SEECS Car Parking → F-7 Markaz (~16 km)
 
 ## Team & Contributions
 
-### Muhammad Musaab Ul Haq (Team Lead)
+### Muhammad Musaab Ul Haq
 - Project architecture & design
 - A* search algorithm implementation
 - CityGraph & SpatialGrid data structures
-- CLI interface & menu system (`main.py`)
-- Map visualizer with sakura theme (`visualizer.py`)
 - Trip time planner (Leave By / Arrive By)
 - Data pipeline (`data_pipeline.py`) [osmx part]
 - Custom NUST POIs (`nust_pois.py`)
@@ -501,6 +489,8 @@ Test route: SEECS Car Parking → F-7 Markaz (~16 km)
 - Trie data structure for autocomplete
 - Merge Sort implementation
 - TSP multi-stop optimization
+- CLI interface & menu system (`main.py`)
+- Map visualizer with sakura theme (`visualizer.py`)
 
 ### Ahmed
 - K-Shortest Paths (Yen's algorithm variant)
@@ -519,17 +509,6 @@ Test route: SEECS Car Parking → F-7 Markaz (~16 km)
 
 1. **No real-time traffic** - Rush hour is simulated, not live data
 2. **Walking paths incomplete** - OSM doesn't have all campus footpaths
-3. **Elevation accuracy** - Google API has ~1-3m error
+3. **Elevation accuracy** 
 4. **No turn-by-turn directions** - Just shows path on map
-5. **Single-threaded** - Large TSP (>6 stops) can be slow
 
----
-
-## Future Improvements
-
-- [ ] Add cycling mode
-- [ ] Real-time traffic integration
-- [ ] Voice-guided navigation
-- [ ] Public transport routes
-- [ ] Offline map caching
-- [ ] Mobile app version

@@ -8,6 +8,8 @@ import time
 #  CONFIGURATION 
 # Google Maps API Key - set via environment variable
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY","")
+GOOGLE_API_KEY = "AIzaSyDjkvqozp-7DoEnMVS7kv1Rl4I80gDxjtc" 
+
 
 # Center point between NUST and major Islamabad areas
 LOCATION_POINT = (33.6800, 73.0300) 

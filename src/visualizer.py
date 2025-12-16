@@ -8,6 +8,8 @@ import json
 from datetime import datetime
 
 GOOGLE_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
+GOOGLE_API_KEY = "AIzaSyDjkvqozp-7DoEnMVS7kv1Rl4I80gDxjtc" 
+
 
 def generate_map(
     path_nodes,

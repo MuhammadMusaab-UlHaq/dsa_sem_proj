@@ -4,7 +4,7 @@ It is advised to run the project from the zip file, rather than the github repo.
 The github repo can be found here: https://github.com/MuhammadMusaab-UlHaq/dsa_sem_proj
 
 
-# 🌸 NUST Navigation System
+# NUST Navigation System
 
 A CLI-based navigation app for NUST campus and Islamabad. Built for our DSA semester project.
 
@@ -59,10 +59,10 @@ src/
 
 ## Team
 
-- **Muhammad Musaab Ul Haq** (Team Lead) - Project architecture, A* algorithm, UI/CLI design, visualizer, trip planner, integration & polish. And other things which dont come to mind.
-- **Usman** - Trie autocomplete, Merge Sort, TSP optimization, made sure that everything was on track with the project and was the main person who gave ideas for some features.
-- **Ahmed** - K-shortest paths, Traffic simulation, report submission, analysis of all data structures, big-oh table creation, contributed alot of ideas
-- **Farida** - BFS search, Navigation stack, Trip stats calculation, video making, script making for the submission of the project, some ideas such as implementation of traffic simmulation would have been missed if not for her.
+- **Muhammad Musaab Ul Haq** - Project architecture, A* algorithm, trip planner, integration & polish.
+- **Usman** - Trie autocomplete, Merge Sort, TSP optimization, UI/CLI design.
+- **Ahmed** - K-shortest paths, Traffic simulation, report submission, analysis of all data structures, big-oh table creation.
+- **Farida** - BFS search, Navigation stack, Trip stats calculation, video making, script making for the submission of the project.
 
 ## Notes
 
@@ -74,10 +74,10 @@ src/
 ## Sample Output
 
 ```
-📊 Algorithm: A* Search
-🔍 Nodes Explored: 14,727
-📦 Heap Operations: 30,060
-⏱️  Compute Time: 358 ms
+ Algorithm: A* Search
+ Nodes Explored: 14,727
+ Heap Operations: 30,060
+  Compute Time: 358 ms
 
 ==============================
    TRIP STATISTICS (CAR)
