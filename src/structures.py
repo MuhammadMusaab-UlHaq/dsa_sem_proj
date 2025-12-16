@@ -1,6 +1,6 @@
 import json
 
-# ================= TRIE DATA STRUCTURE (Usman) =================
+#  TRIE DATA STRUCTURE (Usman) 
 class TrieNode:
     """Node in the Trie structure for efficient prefix searching."""
     def __init__(self):
@@ -37,7 +37,7 @@ class Trie:
         
         for char in prefix:
             if char not in node.children:
-                # No exact prefix match - try fuzzy search
+                # No exact prefix match so try fuzzy search
                 return self._fuzzy_search(prefix)
             node = node.children[char]
         
@@ -114,7 +114,7 @@ class Trie:
         for char, child_node in node.children.items():
             self._collect_words(child_node, current_word + char, suggestions)
 
-# ================= MERGE SORT (Usman) =================
+#  MERGE SORT (Usman) 
 def merge_sort(data_list, key):
     """
     Recursive Merge Sort implementation from scratch.
@@ -153,7 +153,7 @@ def _merge(left, right, key):
     
     return result
 
-# ================= MIN HEAP =================
+#  MIN HEAP 
 class MinHeap:
     """Priority Queue implementation using Min Heap."""
     def __init__(self):
@@ -194,7 +194,7 @@ class MinHeap:
             self.heap[index], self.heap[smallest] = self.heap[smallest], self.heap[index]
             self._sift_down(smallest)
 
-# ================= SPATIAL GRID =================
+#  SPATIAL GRID 
 class SpatialGrid:
     """Spatial hash grid for O(1) POI lookup."""
     def __init__(self, cell_size=0.005):
@@ -217,7 +217,7 @@ class SpatialGrid:
                     nearby.extend(self.grid[k])
         return nearby
 
-# ================= CITY GRAPH =================
+#  CITY GRAPH 
 class CityGraph:
     """Main graph data structure for the navigation system."""
     def __init__(self):
@@ -267,7 +267,7 @@ class CityGraph:
                     self.walk_nodes.add(u)
                     self.walk_nodes.add(v)
         
-        # ===== MODIFIED: Load POIs from both sources =====
+        #  Load POIs from both sources 
         self.pois = []
         
         # First, try loading custom NUST POIs
@@ -275,9 +275,9 @@ class CityGraph:
             from nust_pois import get_all_pois
             custom_pois = get_all_pois()
             self.pois.extend(custom_pois)
-            print(f"📍 Loaded {len(custom_pois)} custom NUST POIs")
+            print(f" Loaded {len(custom_pois)} custom NUST POIs")
         except ImportError:
-            print("⚠️  Custom NUST POIs not found, using OSM data only")
+            print("  Custom NUST POIs not found, using OSM data only")
         
         # Then, load from pois.json (OSM data)
         try:
@@ -290,11 +290,11 @@ class CityGraph:
                 if p['name'].lower() not in existing_names:
                     self.pois.append(p)
             
-            print(f"📍 Added {len(osm_pois)} OSM POIs (merged total: {len(self.pois)})")
+            print(f" Added {len(osm_pois)} OSM POIs (merged total: {len(self.pois)})")
         except FileNotFoundError:
-            print(f"⚠️  POI file not found: {pois_file}")
+            print(f"  POI file not found: {pois_file}")
         except Exception as e:
-            print(f"⚠️  Error loading OSM POIs: {e}")
+            print(f"  Error loading OSM POIs: {e}")
         
         # Build spatial index and Trie
         print(f"🔍 Building search index for {len(self.pois)} locations...")
@@ -302,7 +302,7 @@ class CityGraph:
             self.spatial.add_poi(p['name'], p['lat'], p['lon'], p['type'])
             self.poi_trie.insert(p['name'], p)
         
-        print(f"✅ Ready! {len(self.nodes)} nodes, {len(self.pois)} searchable locations")
+        print(f" Ready! {len(self.nodes)} nodes, {len(self.pois)} searchable locations")
 
     def get_neighbors(self, node_id):
         return self.adj_list.get(node_id, [])

@@ -1,4 +1,3 @@
-# src/visualizer.py
 """
 Sakura-themed Route Visualizer - v2 (All Layout Issues Fixed)
 """
@@ -8,7 +7,6 @@ import os
 import json
 from datetime import datetime
 
-# Google Maps API Key - set via environment variable
 GOOGLE_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
 
 def generate_map(
@@ -24,7 +22,7 @@ def generate_map(
     multi_stop_segments=None,
     waypoint_labels=None
 ):
-    """Generates a Sakura-themed map visualization with fixed layout."""
+    """Generates a map visualization with fixed layout."""
     
     if os.path.dirname(output_file) == "":
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -146,7 +144,7 @@ def generate_map(
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(html_content)
 
-    print(f"🗺️  Map Generated: {output_file}")
+    print(f"  Map Generated: {output_file}")
     try:
         webbrowser.open('file://' + os.path.realpath(output_file))
     except:

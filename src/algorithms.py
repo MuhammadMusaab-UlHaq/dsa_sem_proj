@@ -7,9 +7,9 @@ METERS_PER_DEG_LAT = 111000
 METERS_PER_DEG_LON = 93000
 
 # STRICT ADMISSIBILITY CONSTANTS
-# These are MAXIMUM speeds - heuristic must never overestimate
-MAX_CAR_SPEED = 25.0   # 90 km/h (fastest possible - highway)
-MAX_WALK_SPEED = 1.8   # 6.5 km/h (brisk walking)
+# These are MAXIMUM speed, heuristic must never overestimate
+MAX_CAR_SPEED = 25.0   
+MAX_WALK_SPEED = 1.8   
 
 def get_distance_meters(node_a, node_b):
     """Calculate distance between two nodes in meters."""
@@ -42,7 +42,7 @@ def reconstruct_path(came_from, current):
         total_path.append(current)
     return total_path[::-1]
 
-# ================= A* SEARCH =================
+#  A* SEARCH 
 
 def a_star_search(graph, start_id, end_id, mode='car', return_stats=False):
     """
@@ -118,28 +118,26 @@ def a_star_search(graph, start_id, end_id, mode='car', return_stats=False):
             if mode == 'walk':
                 edge_cost = get_tobler_time(dist, ele_diff)
             else:
-                # Realistic speed based on road type (in m/s)
-                # Calibrated for Islamabad urban driving conditions
                 highway_type = neighbor_data[5] if len(neighbor_data) > 5 else ''
                 
                 speed_map = {
-                    'motorway': 25.0,       # 90 km/h (highway)
-                    'motorway_link': 19.4,  # 70 km/h
-                    'trunk': 19.4,          # 70 km/h (major arterial like IJP)
-                    'trunk_link': 16.7,     # 60 km/h
-                    'primary': 13.9,        # 50 km/h (main urban road)
-                    'primary_link': 11.1,   # 40 km/h
-                    'secondary': 11.1,      # 40 km/h (urban road)
-                    'secondary_link': 9.7,  # 35 km/h
-                    'tertiary': 9.7,        # 35 km/h (neighborhood main)
-                    'tertiary_link': 8.3,   # 30 km/h
-                    'residential': 8.3,     # 30 km/h (residential)
-                    'living_street': 5.6,   # 20 km/h (shared space)
-                    'service': 5.6,         # 20 km/h (parking lots, etc.)
-                    'unclassified': 8.3,    # 30 km/h (default)
+                    'motorway': 25.0,       
+                    'motorway_link': 19.4,  
+                    'trunk': 19.4,          
+                    'trunk_link': 16.7,     
+                    'primary': 13.9,        
+                    'primary_link': 11.1,   
+                    'secondary': 11.1,      
+                    'secondary_link': 9.7,  
+                    'tertiary': 9.7,        
+                    'tertiary_link': 8.3,  
+                    'residential': 8.3,     
+                    'living_street': 5.6,   
+                    'service': 5.6,         
+                    'unclassified': 8.3,    
                 }
                 
-                base_speed = speed_map.get(highway_type, 8.3)  # Default 30 km/h
+                base_speed = speed_map.get(highway_type, 8.3)  
                 
                 # Apply rush hour penalty if active
                 if getattr(graph, 'rush_hour_active', False):
@@ -186,7 +184,7 @@ def a_star_search(graph, start_id, end_id, mode='car', return_stats=False):
 
 
 
-# ================= BFS SEARCH (Farida) =================
+#  BFS SEARCH (Farida) 
 def bfs_search(graph, start, end, return_stats=False):
     """
     Breadth-First Search for path with fewest intersections.
@@ -233,7 +231,7 @@ def bfs_search(graph, start, end, return_stats=False):
         return None, 0, {'algorithm_name': 'BFS', 'nodes_explored': nodes_explored, 'heap_operations': 0, 'time_ms': 0}
     return None, 0
 
-# ================= K-SHORTEST PATHS (Ahmed) =================
+#  K-SHORTEST PATHS (Ahmed) 
 def _modify_edge_weight(graph, u, v, new_weight):
     """Helper to modify edge weight in adj_list."""
     if u not in graph.adj_list:
@@ -309,19 +307,19 @@ def get_k_shortest_paths(graph, start_id, end_id, k=3, mode='car'):
         
     return found_paths
 
-# ================= TRAFFIC SIMULATION (Ahmed) =================
-# Traffic multipliers for rush hour (applied in A* via graph flag)
+#  TRAFFIC SIMULATION (Ahmed) 
+# Traffic multipliers for rush hour
 RUSH_HOUR_MULTIPLIERS = {
-    'motorway': 1.5,       # 50% slower on highways
+    'motorway': 1.5,       
     'motorway_link': 1.6,
-    'trunk': 2.0,          # 100% slower on major arterials (heavy congestion)
+    'trunk': 2.0,          
     'trunk_link': 2.0,
-    'primary': 1.8,        # 80% slower on main urban roads
+    'primary': 1.8,        
     'primary_link': 1.7,
-    'secondary': 1.5,      # 50% slower on urban roads
+    'secondary': 1.5,     
     'secondary_link': 1.4,
-    'tertiary': 1.3,       # 30% slower in neighborhoods
-    'residential': 1.1,    # 10% slower in residential (minimal impact)
+    'tertiary': 1.3,       
+    'residential': 1.1,  
 }
 
 def simulate_traffic(graph):
@@ -329,17 +327,16 @@ def simulate_traffic(graph):
     Simulate rush hour by marking graph for traffic mode.
     The actual slowdown is applied in A* based on road type.
     """
-    print("🚦 Applying Traffic Delays...")
+    print(" Applying Traffic Delays...")
     graph.rush_hour_active = True
-    # Return empty list - we use flag-based approach now
     return []
 
 def reset_traffic(graph, modifications=None):
     """Resets the graph to normal traffic mode."""
     graph.rush_hour_active = False
-    print("🚦 Traffic cleared.")
+    print(" Traffic cleared.")
 
-# ================= TSP OPTIMIZATION (Usman) =================
+#  TSP OPTIMIZATION (Usman) 
 def _nearest_neighbor_tsp(graph, start, stops, mode):
     """
     Greedy Nearest Neighbor heuristic for TSP.
@@ -395,14 +392,14 @@ def optimize_route_order(graph, start, list_of_stops, mode='car'):
     
     # Use Nearest Neighbor for larger stop counts (faster)
     if n_stops > 4:
-        print(f"\n🔄 Using Nearest Neighbor heuristic for {n_stops} stops...")
+        print(f"\n Using Nearest Neighbor heuristic for {n_stops} stops...")
         order, cost, segments, nn_stats = _nearest_neighbor_tsp_with_stats(graph, start, list_of_stops, mode)
         elapsed_ms = (time_module.time() - start_time) * 1000
         
         if order:
-            print(f"✅ Found efficient route! Total time: {cost/60:.1f} minutes")
+            print(f" Found efficient route! Total time: {cost/60:.1f} minutes")
         else:
-            print("❌ No valid route found for these stops")
+            print(" No valid route found for these stops")
         
         algo_stats = {
             'algorithm_name': f'TSP (Nearest Neighbor, {n_stops} stops)',
@@ -420,7 +417,7 @@ def optimize_route_order(graph, start, list_of_stops, mode='car'):
     best_total_cost = float('inf')
     best_segments = {}
     
-    print(f"\n🔄 Evaluating {len(all_permutations)} possible route orders...")
+    print(f"\n Evaluating {len(all_permutations)} possible route orders...")
     
     for perm in all_permutations:
         full_route = [start] + list(perm)
@@ -452,7 +449,7 @@ def optimize_route_order(graph, start, list_of_stops, mode='car'):
     elapsed_ms = (time_module.time() - start_time) * 1000
     
     if best_order is None:
-        print("❌ No valid route found for these stops")
+        print(" No valid route found for these stops")
         algo_stats = {
             'algorithm_name': f'TSP (Brute Force, {n_stops} stops)',
             'nodes_explored': total_nodes_explored,
@@ -463,7 +460,7 @@ def optimize_route_order(graph, start, list_of_stops, mode='car'):
         }
         return [], float('inf'), {}, algo_stats
     
-    print(f"✅ Found optimal route! Total time: {best_total_cost/60:.1f} minutes")
+    print(f" Found optimal route! Total time: {best_total_cost/60:.1f} minutes")
     
     algo_stats = {
         'algorithm_name': f'TSP (Brute Force, {n_stops} stops)',
@@ -521,7 +518,7 @@ def _nearest_neighbor_tsp_with_stats(graph, start, stops, mode):
     }
     return route, total_cost, segments, stats
 
-# ================= MULTI-STOP ROUTE =================
+#  MULTI-STOP ROUTE 
 def multi_stop_route(graph, stops, mode='car'):
     """Calculate route through multiple stops in given order."""
     full_path = []

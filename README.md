@@ -1,3 +1,9 @@
+
+Since some functionality of the semester project is provided through APIs (for the GUI purpose and elevation data). The API has not been commited to the repo for security reasons.
+It is advised to run the project from the zip file, rather than the github repo.
+The github repo can be found here: https://github.com/MuhammadMusaab-UlHaq/dsa_sem_proj
+
+
 # 🌸 NUST Navigation System
 
 A CLI-based navigation app for NUST campus and Islamabad. Built for our DSA semester project.

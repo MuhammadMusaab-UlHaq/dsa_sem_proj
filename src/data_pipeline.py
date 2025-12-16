@@ -5,13 +5,12 @@ import googlemaps
 import os
 import time
 
-# ================= CONFIGURATION =================
+#  CONFIGURATION 
 # Google Maps API Key - set via environment variable
-GOOGLE_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "") 
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY","")
 
-# Islamabad Coverage - Multiple areas to cover more ground
 # Center point between NUST and major Islamabad areas
-LOCATION_POINT = (33.6800, 73.0300)  # Shifted to cover more of Islamabad
+LOCATION_POINT = (33.6800, 73.0300) 
 DIST_RADIUS = 8000  # 8km radius - covers NUST, F-sectors, G-sectors, I-sectors
 
 # File Paths
@@ -22,13 +21,13 @@ EDGES_FILE = os.path.join(DATA_DIR, "edges.json")
 POIS_FILE = os.path.join(DATA_DIR, "pois.json")
 
 def build_nust_database():
-    print("🚀 STARTING DATA PIPELINE (Google Hybrid Engine)...")
+    print("STARTING DATA PIPELINE (Google Hybrid Engine)...")
     
     # 1. Initialize Google Client
     try:
         gmaps = googlemaps.Client(key=GOOGLE_API_KEY)
     except Exception as e:
-        print(f"❌ Error initializing Google Client: {e}")
+        print(f"Error initializing Google Client: {e}")
         return
 
     # 2. Get Road Network (Topology)
@@ -53,7 +52,7 @@ def build_nust_database():
             elevation_results.extend(results)
             time.sleep(0.1) 
         except Exception as e:
-            print(f"      ❌ API Error in batch: {e}")
+            print(f"      API Error in batch: {e}")
             elevation_results.extend([{'elevation': 0}] * len(batch))
             
     # Map elevation back to nodes
@@ -104,12 +103,12 @@ def build_nust_database():
         print(f"      Warning: POI extraction skipped ({e})")
         poi_list = []
 
-    # 5. Save to JSON (Formatting for YOUR structures.py)
+    # 5. Save to JSON 
     print("[4/4] Saving Database...")
     if not os.path.exists(DATA_DIR):
         os.makedirs(DATA_DIR)
 
-    # --- SAVE NODES ---
+    #  SAVE NODES 
     nodes_data = {}
     for u, d in G.nodes(data=True):
         nodes_data[str(u)] = {
@@ -118,14 +117,12 @@ def build_nust_database():
             "elevation": d.get('elevation', 0)
         }
     
-    # --- SAVE EDGES (The Fix) ---
+    #  SAVE EDGES 
     edges_data = []
     for u, v, d in G.edges(data=True):
         hw = d.get('highway', 'road')
-        if isinstance(hw, list): hw = hw[0] # Handle list types
+        if isinstance(hw, list): hw = hw[0] 
         
-        # LOGIC: Determine Walkable vs Drivable based on tag
-        # This logic aligns with what CityGraph expects
         is_walkable = True 
         is_drivable = True
         
@@ -133,16 +130,16 @@ def build_nust_database():
         if hw in ['footway', 'steps', 'corridor', 'path', 'cycleway', 'pedestrian', 'track']:
             is_drivable = False
             
-        # Non-walkable things (Highways mostly)
+        # Non-walkable things
         if hw in ['motorway', 'motorway_link']:
             is_walkable = False
             
         edges_data.append({
             "u": str(u), 
             "v": str(v),
-            "weight": d.get('length', 0),  # RENAMED: length -> weight
-            "is_walkable": is_walkable,    # ADDED
-            "is_drivable": is_drivable,    # ADDED
+            "weight": d.get('length', 0),  
+            "is_walkable": is_walkable,    
+            "is_drivable": is_drivable,    
             "highway": hw,
             "geometry": str(d.get('geometry', '')) 
         })
@@ -151,7 +148,7 @@ def build_nust_database():
     with open(EDGES_FILE, 'w') as f: json.dump(edges_data, f)
     with open(POIS_FILE, 'w') as f: json.dump(poi_list, f)
 
-    print("\n✅ SUCCESS: Database rebuilt perfectly for structures.py!")
+    print("\nSUCCESS: Database rebuilt perfectly for structures.py!")
 
 if __name__ == "__main__":
     build_nust_database()

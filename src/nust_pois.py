@@ -1,17 +1,14 @@
-# src/nust_pois.py
 """
-Comprehensive NUST Campus & Islamabad POI Data
-Manually curated for accurate autocomplete and navigation
+NUST Campus & Islamabad POI Data
+for autocomplete and navigation
 """
 
 NUST_POIS = [
-    # ========== NUST GATES ==========
     {"name": "NUST Gate 1 H-12", "lat": 33.649004446256264, "lon": 72.99923964348355, "type": "gate"},
     {"name": "NUST Gate 2 H-12", "lat": 33.645840289726834, "lon": 72.98015289205203, "type": "gate"},
     {"name": "NUST Gate 4 H-12", "lat": 33.64110085485391, "lon": 72.98369446982326, "type": "gate"},
     {"name": "NUST Gate 10 H-12", "lat": 33.646542853179625, "lon": 73.00168242256376, "type": "gate"},
     
-    # ========== NUST ACADEMIC BUILDINGS ==========
     {"name": "NUST SEECS Building H-12", "lat": 33.64308708840166, "lon": 72.99079023225379, "type": "academic"},
     {"name": "NUST SCEE Building H-12", "lat": 33.64064699448594, "lon": 72.98468897666893, "type": "academic"},
     {"name": "NUST SMME Building H-12", "lat": 33.63652641496167, "lon": 72.9894288829535, "type": "academic"},
@@ -25,7 +22,6 @@ NUST_POIS = [
     {"name": "NUST CAMP Building H-12", "lat": 33.64623801831705, "lon": 72.98791231915385, "type": "academic"},
     {"name": "NUST ASAB Building H-12", "lat": 33.646448429708784, "lon": 72.98785433085735, "type": "academic"},
     
-    # ========== NUST HOSTELS ==========
     {"name": "NUST Concordia 1 H-12", "lat": 33.64651419704775, "lon": 72.99027067501652, "type": "hostel"},
     {"name": "NUST Concordia 2 H-12", "lat": 33.643167218190875, "lon": 72.98817887777331, "type": "hostel"},
     {"name": "NUST Concordia 3 H-12", "lat": 33.642549443108145, "lon": 72.99395104292344, "type": "hostel"},
@@ -38,15 +34,12 @@ NUST_POIS = [
     {"name": "NUST Liaquat Hostel H-12", "lat": 33.6398099160403, "lon": 72.98873744900075, "type": "hostel"},
     {"name": "NUST Beruni Hostel H-12", "lat": 33.64064956001526, "lon": 72.98749291092886, "type": "hostel"},
     
-    # ========== NUST FACILITIES ==========
     {"name": "NUST Central Library H-12", "lat": 33.642130203049646, "lon": 72.99263120528552, "type": "library"},
     {"name": "NUST Sports Complex H-12", "lat": 33.641254998940184, "lon": 72.99452086684339, "type": "sports"},
     {"name": "NUST Medical Center H-12", "lat": 33.644295376074496, "lon": 72.99779890573205, "type": "medical"},
     
-    # ========== NUST RESTAURANTS ==========
     {"name": "Hot N Spicy NUST H-12", "lat": 33.64258611210596, "lon": 72.97278765146037, "type": "restaurant"},
     
-    # ========== ISLAMABAD LANDMARKS & PARKS ==========
     {"name": "Faisal Mosque", "lat": 33.7299, "lon": 73.0384, "type": "landmark"},
     {"name": "Pakistan Monument", "lat": 33.6934, "lon": 73.0683, "type": "landmark"},
     {"name": "Daman-e-Koh", "lat": 33.7384, "lon": 73.0543, "type": "landmark"},
@@ -62,7 +55,6 @@ NUST_POIS = [
     {"name": "Trail 5 Start Margalla", "lat": 33.7410, "lon": 73.0790, "type": "landmark"},
     {"name": "Shah Allah Ditta Caves", "lat": 33.7155, "lon": 72.9360, "type": "landmark"},
     
-    # ========== ISLAMABAD COMMERCIAL AREAS ==========
     {"name": "The Centaurus Mall", "lat": 33.7076, "lon": 73.0501, "type": "mall"},
     {"name": "Safa Gold Mall", "lat": 33.7225, "lon": 73.0558, "type": "mall"},
     {"name": "Giga Mall DHA", "lat": 33.5475, "lon": 73.1560, "type": "mall"},
@@ -80,7 +72,6 @@ NUST_POIS = [
     {"name": "I-8 Markaz", "lat": 33.6677, "lon": 73.0752, "type": "commercial"},
     {"name": "I-10 Markaz", "lat": 33.6420, "lon": 73.0350, "type": "commercial"},
     
-    # ========== UNIVERSITIES & GOVERNMENT ==========
     {"name": "Bahria University E-8", "lat": 33.7145, "lon": 73.0280, "type": "university"},
     {"name": "Air University E-9", "lat": 33.7175, "lon": 73.0240, "type": "university"},
     {"name": "IIUI H-10", "lat": 33.6600, "lon": 73.0250, "type": "university"},
@@ -91,7 +82,6 @@ NUST_POIS = [
     {"name": "PIMS Hospital", "lat": 33.7040, "lon": 73.0530, "type": "hospital"},
     {"name": "Shifa International Hospital", "lat": 33.6820, "lon": 73.0950, "type": "hospital"},
     
-    # ========== TRANSPORT & INTERCHANGES ==========
     {"name": "Faizabad Interchange", "lat": 33.6615, "lon": 73.0845, "type": "interchange"},
     {"name": "Golra Mor", "lat": 33.6268, "lon": 72.9708, "type": "interchange"},
     {"name": "Peshawar Mor Interchange", "lat": 33.6880, "lon": 73.0450, "type": "interchange"},
@@ -103,7 +93,6 @@ NUST_POIS = [
     {"name": "Tramri Chowk", "lat": 33.6550, "lon": 73.1380, "type": "interchange"},
     {"name": "Rawal Chowk", "lat": 33.7070, "lon": 73.1120, "type": "interchange"},
     
-    # ========== GAS STATIONS ==========
     {"name": "Shell F-6 Super Market", "lat": 33.7310, "lon": 73.0680, "type": "fuel"},
     {"name": "PSO Blue Area", "lat": 33.7140, "lon": 73.0600, "type": "fuel"},
     {"name": "Shell F-7 Jinnah Super", "lat": 33.7220, "lon": 73.0565, "type": "fuel"},
@@ -120,7 +109,6 @@ NUST_POIS = [
     {"name": "Total Parco Rawal Dam", "lat": 33.7040, "lon": 73.1180, "type": "fuel"},
     {"name": "Shell E-11", "lat": 33.6980, "lon": 72.9850, "type": "fuel"},
     
-    # ========== RESTAURANTS ==========
     {"name": "Savour Foods Blue Area", "lat": 33.7144, "lon": 73.0645, "type": "restaurant"},
     {"name": "The Monal Restaurant", "lat": 33.7439, "lon": 73.0560, "type": "restaurant"},
     {"name": "La Montana", "lat": 33.7445, "lon": 73.0570, "type": "restaurant"},
@@ -152,7 +140,6 @@ NUST_POIS = [
     {"name": "Tayto Centaurus", "lat": 33.7076, "lon": 73.0501, "type": "restaurant"},
     {"name": "Burger Fest F-7", "lat": 33.7210, "lon": 73.0580, "type": "restaurant"},
     
-    # ========== HOTELS ==========
     {"name": "Islamabad Serena Hotel", "lat": 33.7236, "lon": 73.0970, "type": "hotel"},
     {"name": "Islamabad Marriott Hotel", "lat": 33.7335, "lon": 73.0863, "type": "hotel"},
     {"name": "The Centaurus Hotel", "lat": 33.7076, "lon": 73.0501, "type": "hotel"},
@@ -194,7 +181,6 @@ NUST_POIS = [
     {"name": "Pak Palace Hotel", "lat": 33.7050, "lon": 73.0800, "type": "hotel"},
     {"name": "Jasmine Inn Islamabad", "lat": 33.6910, "lon": 73.0360, "type": "hotel"},
     
-    # ========== ATMs ==========
     {"name": "HBL ATM F-7 Markaz", "lat": 33.7215, "lon": 73.0543, "type": "atm"},
     {"name": "MCB ATM I-8 Markaz", "lat": 33.6680, "lon": 73.0760, "type": "atm"},
     {"name": "Meezan Bank ATM F-10", "lat": 33.6942, "lon": 73.0155, "type": "atm"},
