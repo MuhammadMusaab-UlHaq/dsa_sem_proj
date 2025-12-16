@@ -57,12 +57,48 @@ src/
 └── data_pipeline.py # Downloads fresh data from OSM/Google
 ```
 
-## Team
+## Team & Contributions
 
-- **Muhammad Musaab Ul Haq** - Project architecture, A* algorithm, trip planner, integration & polish.
-- **Usman** - Trie autocomplete, Merge Sort, TSP optimization, UI/CLI design.
-- **Ahmed** - K-shortest paths, Traffic simulation, report submission, analysis of all data structures, big-oh table creation.
-- **Farida** - BFS search, Navigation stack, Trip stats calculation, video making, script making for the submission of the project.
+### Muhammad Musaab Ul Haq
+- Project architecture & system design
+- A* search algorithm with road-type awareness
+- MinHeap priority queue implementation
+- CityGraph & SpatialGrid data structures
+- Tobler's Hiking Function for walking speeds
+- Smart node snapping algorithm
+- Trip time planner (Leave By / Arrive By)
+- Custom NUST POIs database (`nust_pois.py`)
+- Route data collection & integration
+- Branch management & code integration
+- Entry point script (`run.py`)
+- Final polish & bug fixes
+
+### Usman
+- Trie data structure for autocomplete
+- Levenshtein distance for fuzzy/typo-tolerant search
+- Merge Sort implementation (from scratch)
+- TSP multi-stop optimization (brute force + nearest neighbor)
+- CLI interface & menu system (`main.py`)
+- Map visualizer with sakura theme (`visualizer.py`)
+- Fun statistics generator (relatable comparisons)
+- POI name formatting & type icons
+- Multi-stop segment visualization
+
+### Ahmed
+- K-Shortest Paths (Yen's algorithm variant)
+- Traffic simulation system & rush hour multipliers
+- Rush hour detection logic
+- Traffic impact analysis feature
+- Data pipeline (`data_pipeline.py`)
+- History manager with frequent destinations analysis
+- Report writing & Big-O analysis
+
+### Farida
+- BFS search algorithm (fewest turns)
+- Navigation stack logic
+- Trip statistics calculation
+- Elevation gain/loss calculation
+- Video production & presentation script
 
 ## Notes
 

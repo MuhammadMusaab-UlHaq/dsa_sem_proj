@@ -476,32 +476,48 @@ Test route: SEECS Car Parking → F-7 Markaz (~16 km)
 ## Team & Contributions
 
 ### Muhammad Musaab Ul Haq
-- Project architecture & design
-- A* search algorithm implementation
+- Project architecture & system design
+- A* search algorithm with road-type awareness 
+- MinHeap priority queue implementation 
 - CityGraph & SpatialGrid data structures
-- Trip time planner (Leave By / Arrive By)
-- Data pipeline (`data_pipeline.py`) [osmx part]
-- Custom NUST POIs (`nust_pois.py`)
+- Tobler's Hiking Function for walking speed
+- Smart node snapping algorithm 
+- Trip time planner - Leave By / Arrive By 
+- Custom NUST POIs database 
+- Route data collection & integration 
 - Branch management & code integration
+- Entry point script (`run.py`)
 - Final polish & bug fixes
 
 ### Usman
-- Trie data structure for autocomplete
-- Merge Sort implementation
-- TSP multi-stop optimization
+- Trie data structure for autocomplete 
+- Levenshtein distance for fuzzy/typo-tolerant search 
+- Merge Sort implementation from scratch 
+- TSP multi-stop optimization 
+  - Brute force for ≤4 stops
+  - Nearest Neighbor heuristic for >4 stops
 - CLI interface & menu system (`main.py`)
 - Map visualizer with sakura theme (`visualizer.py`)
+- Fun statistics generator 
+- POI name formatting & type icons 
+- Multi-stop segment visualization 
 
 ### Ahmed
-- K-Shortest Paths (Yen's algorithm variant)
-- Traffic simulation system
-- Data pipeline (`data_pipeline.py`) [google maps part]
-- History manager
+- K-Shortest Paths - Yen's algorithm variant 
+- Traffic simulation system 
+- Rush hour detection logic 
+- Traffic impact analysis feature 
+- Data pipeline - OSM + Google APIs (`data_pipeline.py`)
+- History manager (`history_manager.py`)
+- Frequent destinations analysis 
+- Report writing & Big-O complexity analysis
 
 ### Farida
-- BFS search algorithm
-- Navigation stack logic
-- Trip statistics calculation
+- BFS search algorithm - fewest turns 
+- Navigation stack logic 
+- Trip statistics calculation 
+- Elevation gain/loss calculation 
+- Video production & presentation script
 
 ---
 
