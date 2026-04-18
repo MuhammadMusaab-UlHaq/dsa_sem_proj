@@ -1,9 +1,3 @@
-
-Since some functionality of the semester project is provided through APIs (for the GUI purpose and elevation data). The API has not been commited to the repo for security reasons.
-It is advised to run the project from the zip file, rather than the github repo.
-The github repo can be found here: https://github.com/MuhammadMusaab-UlHaq/dsa_sem_proj
-
-
 # NUST Navigation System
 
 A CLI-based navigation app for NUST campus and Islamabad. Built for our DSA semester project.
@@ -18,6 +12,18 @@ python run.py
 ```
 
 That's it. The app loads 33k+ road nodes and 1000+ POIs on startup.
+
+### API key setup (for map/elevation features)
+
+Create a `.env` file (or export variables in your shell):
+
+```bash
+GOOGLE_MAPS_API_KEY=your_api_key_here
+# optional compatibility alias used by data pipeline:
+GOOGLE_API_KEY=your_api_key_here
+```
+
+If no key is provided, core CLI pathfinding still works with local data, while Google-backed features may be limited.
 
 ## Features at a Glance
 

@@ -326,7 +326,7 @@ Downloads and processes map data from OpenStreetMap + Google.
 ```python
 LOCATION_POINT = (33.6800, 73.0300)  # Center between NUST and Islamabad
 DIST_RADIUS = 8000                    # 8km radius
-GOOGLE_API_KEY = "..."                # For elevation data
+GOOGLE_API_KEY = os.environ.get(...)  # For elevation data
 ```
 
 **Process**:
@@ -347,6 +347,9 @@ GOOGLE_API_KEY = "..."                # For elevation data
 **Running the pipeline**:
 ```bash
 cd src
+# set one of these first:
+# export GOOGLE_API_KEY=your_key
+# export GOOGLE_MAPS_API_KEY=your_key
 python data_pipeline.py
 ```
 
@@ -527,4 +530,3 @@ Test route: SEECS Car Parking → F-7 Markaz (~16 km)
 2. **Walking paths incomplete** - OSM doesn't have all campus footpaths
 3. **Elevation accuracy** 
 4. **No turn-by-turn directions** - Just shows path on map
-

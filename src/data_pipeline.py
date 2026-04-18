@@ -7,8 +7,7 @@ import time
 
 #  CONFIGURATION 
 # Google Maps API Key - set via environment variable
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY","")
-GOOGLE_API_KEY = "AIzaSyDjkvqozp-7DoEnMVS7kv1Rl4I80gDxjtc" 
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GOOGLE_MAPS_API_KEY", "")
 
 
 # Center point between NUST and major Islamabad areas
@@ -24,6 +23,10 @@ POIS_FILE = os.path.join(DATA_DIR, "pois.json")
 
 def build_nust_database():
     print("STARTING DATA PIPELINE (Google Hybrid Engine)...")
+
+    if not GOOGLE_API_KEY:
+        print("Error: Missing Google Maps API key. Set GOOGLE_API_KEY or GOOGLE_MAPS_API_KEY in your environment.")
+        return
     
     # 1. Initialize Google Client
     try:
