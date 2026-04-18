@@ -5,10 +5,10 @@ Sakura-themed Route Visualizer - v2 (All Layout Issues Fixed)
 import webbrowser
 import os
 import json
+import html
 from datetime import datetime
 
-GOOGLE_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
-GOOGLE_API_KEY = "AIzaSyDjkvqozp-7DoEnMVS7kv1Rl4I80gDxjtc" 
+GOOGLE_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY") or os.environ.get("GOOGLE_API_KEY", "")
 
 
 def generate_map(
@@ -218,7 +218,18 @@ def build_html(route_coords, elevations, start_name, end_name, start_coord, end_
         energy_label = "Fuel Cost"
         energy_value = f"PKR {route_stats.get('fuel_cost', 0):.0f}"
     
-    algo_name = algorithm_stats.get('algorithm_name', 'A*')
+    start_name_safe = html.escape(str(start_name), quote=True)
+    end_name_safe = html.escape(str(end_name), quote=True)
+    short_start_name_safe = html.escape(str(start_name)[:15], quote=True)
+    short_end_name_safe = html.escape(str(end_name)[:15], quote=True)
+    start_ellipsis = '...' if len(str(start_name)) > 15 else ''
+    end_ellipsis = '...' if len(str(end_name)) > 15 else ''
+
+    mode_display_safe = html.escape(str(mode_display), quote=True)
+    energy_label_safe = html.escape(str(energy_label), quote=True)
+    energy_value_safe = html.escape(str(energy_value), quote=True)
+    algo_name_safe = html.escape(str(algorithm_stats.get('algorithm_name', 'A*')), quote=True)
+
     nodes_explored = algorithm_stats.get('nodes_explored', 0)
     heap_ops = algorithm_stats.get('heap_operations', 0)
     compute_time = algorithm_stats.get('time_ms', 0)
@@ -230,9 +241,10 @@ def build_html(route_coords, elevations, start_name, end_name, start_coord, end_
     pois_html = ""
     if pois:
         for p in pois[:4]:  # Limit to 4 to save space
+            poi_name_safe = html.escape(str(p.get('name', 'Unknown')), quote=True)
             pois_html += f'''
                 <div class="poi-item">
-                    <span class="poi-name">{p.get('name', 'Unknown')}</span>
+                    <span class="poi-name">{poi_name_safe}</span>
                     <span class="poi-distance">{p.get('distance_m', 0):.0f}m</span>
                 </div>'''
     else:
@@ -240,20 +252,20 @@ def build_html(route_coords, elevations, start_name, end_name, start_coord, end_
     
     fun_stats_html = ""
     for stat in fun_stats:
-        fun_stats_html += f'<div class="fun-stat">{stat}</div>'
+        fun_stats_html += f'<div class="fun-stat">{html.escape(str(stat), quote=True)}</div>'
     if not fun_stats:
         fun_stats_html = '<div class="fun-stat">🎯 You\'re on your way!</div>'
     
     elevation_json = json.dumps(elevations)
     route_coords_json = json.dumps(route_coords)
-    current_time = datetime.now().strftime("%B %d, %Y • %I:%M %p")
+    current_time = html.escape(datetime.now().strftime("%B %d, %Y • %I:%M %p"), quote=True)
 
     return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{end_name} | NUST Navigator</title>
+    <title>{end_name_safe} | NUST Navigator</title>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key={GOOGLE_API_KEY}"></script>
@@ -1039,18 +1051,18 @@ def build_html(route_coords, elevations, start_name, end_name, start_coord, end_
             <div class="route-visual">
                 <div class="location-badge">
                     <div class="location-dot start">A</div>
-                    <div class="location-name" title="{start_name}">{start_name[:15]}{'...' if len(start_name) > 15 else ''}</div>
+                    <div class="location-name" title="{start_name_safe}">{short_start_name_safe}{start_ellipsis}</div>
                 </div>
                 <div class="route-line"></div>
                 <div class="location-badge">
                     <div class="location-dot end">B</div>
-                    <div class="location-name" title="{end_name}">{end_name[:15]}{'...' if len(end_name) > 15 else ''}</div>
+                    <div class="location-name" title="{end_name_safe}">{short_end_name_safe}{end_ellipsis}</div>
                 </div>
             </div>
 
             <div class="mode-badge">
                 <span class="material-icons-round">{mode_icon}</span>
-                {mode_display}
+                {mode_display_safe}
             </div>
 
             <div class="quick-stats">
@@ -1147,8 +1159,8 @@ def build_html(route_coords, elevations, start_name, end_name, start_coord, end_
             </div>
             <div class="route-badge-divider"></div>
             <div class="route-badge-item">
-                <div class="route-badge-value">{energy_value}</div>
-                <div class="route-badge-label">{energy_label}</div>
+                <div class="route-badge-value">{energy_value_safe}</div>
+                <div class="route-badge-label">{energy_label_safe}</div>
             </div>
         </div>
 
@@ -1165,7 +1177,7 @@ def build_html(route_coords, elevations, start_name, end_name, start_coord, end_
                 </div>
                 <div class="panel-content">
                     <div class="algo-card">
-                        <div class="algo-name">{algo_name}</div>
+                        <div class="algo-name">{algo_name_safe}</div>
                         <div class="algo-stats">
                             <div class="algo-stat"><strong>{nodes_explored:,}</strong> nodes</div>
                             <div class="algo-stat"><strong>{heap_ops:,}</strong> heap ops</div>
